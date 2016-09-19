@@ -1,0 +1,26 @@
+{
+   "from":"local",
+   "result":"suee",
+   "format":"flv",
+   "timelength":283324,
+   "accept_format":"mp4,hdmp4,flv",
+   "accept_quality":[
+      3,
+      2,
+      1
+   ],
+   "seek_param":"start",
+   "seek_type":"offset",
+   "durl":[
+      {
+         "order":1,
+         "length":283324,
+         "size":72450795,
+         "url":"http://cn-cq3-cu.acgvideo.com/vg2/8/a6/8551612-1.flv?expires=1474288500&ssig=GJ9c8OJUz3mZQT3OGT41UQ&oi=3708243307&rate=0",
+         "backup_url":[
+            "http://cn-tj3-cu.acgvideo.com/vg6/a/9c/8551612-1.flv?expires=1474288500&ssig=ky9JegSFg9MwP-VBWMtBHw&oi=3708243307&rate=0",
+            "http://ws.acgvideo.com/0/22/8551612-1.flv?wsTime=1474288705&wsSecret2=4a18abf3b78cbcc277c5c1b814170bc2&oi=3708243307"
+         ]
+      }
+   ]
+}
