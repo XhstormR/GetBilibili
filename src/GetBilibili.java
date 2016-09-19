@@ -20,9 +20,10 @@ public class GetBilibili {
     private static final String YamdiLink = "http://ww4.sinaimg.cn/large/a15b4afegw1f7vhnqa9soj203k03kwfe";
     private static final String FFmpegLink = "http://ww4.sinaimg.cn/large/a15b4afegw1f7vhtyv0wbj203k03k4qz";
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
-    private static final String Appkey = "85eb6835b0a1034e";
-    private static final String Secretkey = "2ad42749773c441109bdc0191257a664";
+    private static final String Appkey = "85eb6835b0a1034e";/*请不要滥用，且用且珍惜*/
+    private static final String Secretkey = "2ad42749773c441109bdc0191257a664";/*请不要滥用，且用且珍惜*/
     private static File Dir;
+    private static File TempDir;
     private static String Cid;
     private static List<String> Link;
     private static boolean Delete = true;
@@ -32,6 +33,11 @@ public class GetBilibili {
         Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
         if (!Dir.exists()) {
             Dir.mkdir();
+        }
+        String tempPath = System.getenv("APPDATA");
+        TempDir = new File(tempPath, "GetBilibili");
+        if (!TempDir.exists()) {
+            TempDir.mkdir();
         }
 
         System.out.println();
@@ -117,7 +123,7 @@ public class GetBilibili {
     }
 
     private static void saveLink() throws IOException {
-        File link = new File(Dir, "1.txt");
+        File link = new File(TempDir, "1.txt");
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(link, false), "utf-8"));
         for (String s : Link) {
             bufferedWriter.write(s);
@@ -130,17 +136,16 @@ public class GetBilibili {
     }
 
     private static void downLoad() throws IOException, InterruptedException {
-        if (!new File(Dir, "aria2c.exe").exists()) {
+        if (!new File(TempDir, "aria2c.exe").exists()) {
             getEXE(Aria2Link);
         }
-        execute(true, Dir.getAbsolutePath() + "/aria2c.exe", "--input-file=1.txt", "--dir=Download", "--disk-cache=32M", "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
+        execute(true, TempDir.getAbsolutePath() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.getAbsolutePath(), "--disk-cache=32M", "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
     }
 
     private static void listFile() throws IOException {
-        File fileList = new File(Dir, "2.txt");
+        File fileList = new File(TempDir, "2.txt");
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileList, false), "utf-8"));
-        File downLoadDir = new File(Dir, "Download");
-        File[] files = downLoadDir.listFiles(new FilenameFilter() {
+        File[] files = Dir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
                 return name.endsWith(".flv");
@@ -159,8 +164,8 @@ public class GetBilibili {
                 }
             });
             for (File file : files) {
-                String name = file.getName();
-                bufferedWriter.write(new StringBuilder("file 'Download/'").insert(15, name).toString());
+                String path = file.getAbsolutePath();
+                bufferedWriter.write(new StringBuilder("file ''").insert(6, path).toString());
                 bufferedWriter.newLine();
             }
         }
@@ -180,39 +185,41 @@ public class GetBilibili {
 //        exec2.waitFor();
 
         /*方案二*/
-        if (!new File(Dir, "ffmpeg.exe").exists()) {
+        File tempFLV = new File(Dir.getParent(), "123.flv");
+
+        System.out.println("\n" + "Merging...");
+        if (!new File(TempDir, "ffmpeg.exe").exists()) {
             getEXE(FFmpegLink);
         }
-        execute(true, Dir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-i", "2.txt", "-c", "copy", "123.flv");
+        execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.getAbsolutePath());
 
-        if (!new File(Dir, "yamdi.exe").exists()) {
+        System.out.println("\n" + "Merging...");
+        if (!new File(TempDir, "yamdi.exe").exists()) {
             getEXE(YamdiLink);
         }
-        execute(true, Dir.getAbsolutePath() + "/yamdi.exe", "-i", "123.flv", "-o", Dir.getParent() + "/" + (Cid != null ? Cid : "Video") + ".flv");
+        execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", Dir.getParent() + "/" + (Cid != null ? Cid : "Video") + ".flv");
 
-        File file = new File(Dir, "123.flv");
-        if (file.exists()) {
-            file.deleteOnExit();
+        if (tempFLV.exists()) {
+            tempFLV.deleteOnExit();
         }
 
         if (Delete) {
-            File downLoadDir = new File(Dir, "Download");
-            File[] files = downLoadDir.listFiles();
+            File[] files = Dir.listFiles();
             if (files != null) {
                 for (File flv : files) {
                     flv.delete();
                 }
             }
-            downLoadDir.deleteOnExit();
+            Dir.deleteOnExit();
         }
     }
 
     private static void getEXE(String link) throws IOException, InterruptedException {
-        if (!new File(Dir, "7zr.exe").exists()) {
+        if (!new File(TempDir, "7zr.exe").exists()) {
             getFile(SevenZipLink);
         }
         File file = getFile(link);
-        execute(false, Dir.getAbsolutePath() + "/7zr.exe", "x", file.getName());
+        execute(false, TempDir.getAbsolutePath() + "/7zr.exe", "x", file.getName());
         if (file.exists()) {
             file.delete();
         }
@@ -223,7 +230,7 @@ public class GetBilibili {
         URLConnection connection = url.openConnection();
         connection.addRequestProperty("User-Agent", UserAgent);
         String path = url.getFile();
-        File file = new File(Dir, path.substring(path.lastIndexOf('/') + 1));
+        File file = new File(TempDir, path.substring(path.lastIndexOf('/') + 1));
 
         BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream(), 32 * 1024);
         BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, false), 32 * 1024);
@@ -239,7 +246,7 @@ public class GetBilibili {
     }
 
     private static void execute(boolean show, String... command) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(command).directory(Dir).redirectErrorStream(true).start();
+        Process process = new ProcessBuilder(command).directory(TempDir).redirectErrorStream(true).start();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"));
         for (String s; (s = bufferedReader.readLine()) != null; ) {
             if (show) {
