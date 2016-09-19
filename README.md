@@ -21,3 +21,6 @@ Merge Segmented Video
 GetBilibili.jar -m 1     #合并后删除源文件
 GetBilibili.jar -m 0     #合并后保留源文件
 ```
+
+## Reference
+https://www.v2ex.com/t/307373
