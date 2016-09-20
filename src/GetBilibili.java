@@ -31,6 +31,7 @@ public class GetBilibili {
     private static int Video_Length;
     private static List<String> Link;
     private static boolean Delete = true;
+    private static boolean Convert = false;
 
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
         String path = GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath();
@@ -61,11 +62,13 @@ public class GetBilibili {
                 break;
             case "-m":
                 Delete = args[1].equals("1");
+                Convert = args[2].equals("1");
                 listFile();
                 mergeFLV();
                 break;
             case "-d":
                 getCID(args[1]);
+                Convert = args[2].equals("1");
                 getLink();
                 saveLink();
                 downLoad();
@@ -203,6 +206,8 @@ public class GetBilibili {
 
         /*方案二*/
         File tempFLV = new File(Dir.getParent(), "123.flv");
+        String replaceTitleString = Video_Title != null ? Video_Title.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ') : null;
+        String finalFilePath = Dir.getParent() + "\\" + (Video_Title != null ? replaceTitleString : "Video") + (Convert ? ".mp4" : ".flv");
 
         System.out.println("\n" + "Merging...");
         if (!new File(TempDir, "ffmpeg.exe").exists()) {
@@ -210,12 +215,16 @@ public class GetBilibili {
         }
         execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.getAbsolutePath());
 
-        System.out.println("\n" + "Merging...");
-        if (!new File(TempDir, "yamdi.exe").exists()) {
-            getEXE(YamdiLink);
+        if (Convert) {
+            System.out.println("\n" + "Converting...");
+            execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-i", tempFLV.getAbsolutePath(), "-c", "copy", finalFilePath);
+        } else {
+            System.out.println("\n" + "Merging...");
+            if (!new File(TempDir, "yamdi.exe").exists()) {
+                getEXE(YamdiLink);
+            }
+            execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", finalFilePath);
         }
-        String replaceTitleString = Video_Title.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ');
-        execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", Dir.getParent() + "\\" + (Video_Title != null ? replaceTitleString : "Video") + ".flv");
 
         if (tempFLV.exists()) {
             tempFLV.deleteOnExit();
