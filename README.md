@@ -10,9 +10,9 @@ GetBilibili.jar -l http://www.bilibili.com/video/av1585238
 ## Download
 Download Bilibili Ultra-Definition Video
 ```bash
-GetBilibili.jar -d http://www.bilibili.com/video/av1585238 1 D:/TEST    下载且合并完成后，转为 MP4 格式，文件下载目录指定为 D:/TEST
-GetBilibili.jar -d http://www.bilibili.com/video/av1585238 0 0    下载且合并完成后，保留为原格式，文件下载目录为原 JAR 包位置
-GetBilibili.jar -d http://www.bilibili.com/video/av1585238    下载且合并完成后，保留为原格式，文件下载目录为原 JAR 包位置（默认）
+GetBilibili.jar -d http://www.bilibili.com/video/av1585238 1 D:/TEST     下载且合并完成后，转为MP4格式，文件下载目录指定为 D:/TEST
+GetBilibili.jar -d http://www.bilibili.com/video/av1585238 0 0     下载且合并完成后，保留为原格式，文件下载目录为原 JAR 包位置
+GetBilibili.jar -d http://www.bilibili.com/video/av1585238     下载且合并完成后，保留为原格式，文件下载目录为原 JAR 包位置（默认）
 ```
 
 ## Merge
