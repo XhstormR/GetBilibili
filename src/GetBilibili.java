@@ -46,11 +46,15 @@ public class GetBilibili {
         }
 
         System.out.println();
-        if (args.length < 2) {
+        if (args.length < 1) {
             System.out.println("Error!!!");
             return;
         } else switch (args[0]) {
             case "-l":
+                if (args.length < 2) {
+                    System.out.println("Error!!!");
+                    return;
+                }
                 getCID(args[1]);
                 getLink();
                 DecimalFormat sizeFormat = new DecimalFormat("0.00");
@@ -61,18 +65,20 @@ public class GetBilibili {
                 Link.forEach(System.out::println);
                 break;
             case "-m":
-                if (args[1] != null) {
+                if (args.length > 2) {
                     Delete = args[1].equals("1");
-                }
-                if (args[2] != null) {
                     Convert = args[2].equals("1");
                 }
                 listFile();
                 mergeFLV();
                 break;
             case "-d":
+                if (args.length < 2) {
+                    System.out.println("Error!!!");
+                    return;
+                }
                 getCID(args[1]);
-                if (args[2] != null) {
+                if (args.length > 2) {
                     Convert = args[2].equals("1");
                 }
                 getLink();
