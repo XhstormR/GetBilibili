@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -34,7 +35,7 @@ public class GetBilibili {
     private static boolean Convert = false;
 
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
-        String path = GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
         Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
         if (!Dir.exists()) {
             Dir.mkdirs();
