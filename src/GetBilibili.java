@@ -340,6 +340,7 @@ public class GetBilibili {
         /*通过自带 Bean 对象解析*/
         List<String> Link = new ArrayList<>();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(link).openStream(), "utf-8"));
+
         JsonObject jsonObject = new JsonParser().parse(bufferedReader).getAsJsonObject();
         JsonArray jsonArray = jsonObject.getAsJsonArray("durl");
         for (JsonElement durl : jsonArray) {
