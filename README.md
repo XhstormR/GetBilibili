@@ -36,3 +36,4 @@ JRE：https://pan.baidu.com/s/1i5nt6AT 密码：nubs
 - [x] 自定义文件下载目录
 - [x] 合并后无损转为 MP4 格式
 - [x] 支持解析隐藏视频
+- [x] 支持解析番剧视频
