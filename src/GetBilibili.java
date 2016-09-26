@@ -125,16 +125,30 @@ public class GetBilibili {
 
         /*原生解析页面获得 Video_Cid 和 Video_Title*/
         if (url.contains("bangumi")) {
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
-            for (String s; (s = bufferedReader.readLine()) != null; ) {
-                if (s.contains("v-av-link")) {
-                    int i = s.indexOf('"') + 1;
-                    int j = s.indexOf('"', i);
-                    url = s.substring(i, j);
-                    break;
+            if (url.contains("movie")) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+                for (String s; (s = bufferedReader.readLine()) != null; ) {
+                    if (s.contains("formalAid")) {
+                        int i = s.indexOf('"') + 1;
+                        int j = s.indexOf('"', i);
+                        url = new StringBuilder("http://www.bilibili.com/video/av/").insert(32, s.substring(i, j)).toString();
+                        break;
+                    }
                 }
+                bufferedReader.close();
             }
-            bufferedReader.close();
+            if (url.contains("anime")) {
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+                for (String s; (s = bufferedReader.readLine()) != null; ) {
+                    if (s.contains("v-av-link")) {
+                        int i = s.indexOf('"') + 1;
+                        int j = s.indexOf('"', i);
+                        url = s.substring(i, j);
+                        break;
+                    }
+                }
+                bufferedReader.close();
+            }
         }
         String cookie = "DedeUserID=1824443; SESSDATA=f201dba8%2C1475662871%2C2a00cb50";
         URLConnection connection = new URL(url).openConnection();
