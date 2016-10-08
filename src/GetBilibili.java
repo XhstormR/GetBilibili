@@ -191,8 +191,8 @@ public class GetBilibili {
 //        }
 
         /*通过 JSON 解析官方 BiliBili 获得 Link*/
-        StringBuilder SubLink = new StringBuilder().append("appkey=").append(new String(new BASE64Decoder().decodeBuffer(Appkey))).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
-        String Sign = Hash(SubLink + new String(new BASE64Decoder().decodeBuffer(Secretkey)), "MD5");
+        StringBuilder SubLink = new StringBuilder().append("appkey=").append(new String(new BASE64Decoder().decodeBuffer(Appkey), "utf-8")).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
+        String Sign = Hash(SubLink + new String(new BASE64Decoder().decodeBuffer(Secretkey), "utf-8"), "MD5");
         Link = Json("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
     }
 
