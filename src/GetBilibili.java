@@ -16,6 +16,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import static java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT;
+
 public class GetBilibili {
     private static final String UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.89 Safari/537.36";
     private static final String Aria2Link = "http://ww4.sinaimg.cn/large/a15b4afegw1f7vk9216gvj203k03kb29";
@@ -261,8 +263,7 @@ public class GetBilibili {
 
         /*方案二*/
         File tempFLV = new File(Dir.getParent(), "123.flv");
-        String replaceTitleString = Video_Title != null ? Video_Title.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('‧', ' ').replace('•', ' ') : null;
-        String finalFilePath = Dir.getParent() + "\\" + (Video_Title != null ? replaceTitleString : "Video") + (Convert ? ".mp4" : ".flv");
+        String finalFilePath = Dir.getParent() + "\\" + getFileName() + (Convert ? ".mp4" : ".flv");
 
         System.out.println("\n" + "Merging...");
         if (!new File(TempDir, "ffmpeg.exe").exists()) {
@@ -294,6 +295,19 @@ public class GetBilibili {
             }
             Dir.deleteOnExit();
         }
+    }
+
+    private static String getFileName() {
+        if (Video_Title == null) {
+            return "Video";
+        }
+        StringBuilder stringBuilder = new StringBuilder();
+        for (char c : Video_Title.toCharArray()) {
+            Character.UnicodeBlock unicodeBlock = Character.UnicodeBlock.of(c);
+            stringBuilder.append(unicodeBlock.equals(LATIN_1_SUPPLEMENT) ? "" : c);
+        }
+        String s = stringBuilder.toString();
+        return s.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('‧', ' ').replace('•', ' ');
     }
 
     private static void getEXE(String link) throws IOException, InterruptedException {
