@@ -68,3 +68,4 @@ fabric.properties
 
 ### Customize ###
 !libs/*.jar
+!.idea/libraries

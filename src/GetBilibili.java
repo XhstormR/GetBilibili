@@ -444,10 +444,11 @@ public class GetBilibili {
         for (String s; (s = bufferedReader.readLine()) != null; ) {
             stringBuilder.append(s);
         }
-        String XML = stringBuilder.toString();//
+        bufferedReader.close();
+        String xml = stringBuilder.toString();/*XML 文件*/
 
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-        Document document = documentBuilder.parse(new InputSource(new StringReader(XML)));//
+        Document document = documentBuilder.parse(new InputSource(new StringReader(xml)));/*XML 对象*/
 
         List<String> Link = new ArrayList<>();
         NodeList durl = document.getElementsByTagName("durl");
