@@ -34,6 +34,7 @@ public class GetBilibili {
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
     private static final String Appkey = "NmY5MGE1OWFjNThhNDEyMw==";
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
+    private static final String Cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=ayhy6i1s";
     private static File Dir;
     private static File TempDir;
     private static String Video_Cid;
@@ -186,10 +187,9 @@ public class GetBilibili {
                 bufferedReader.close();
             }
         }
-        String cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=ayhy6i1s";
-        URLConnection connection = new URL(url).openConnection();
-        connection.setRequestProperty("Cookie", cookie);
 
+        URLConnection connection = new URL(url).openConnection();
+        connection.setRequestProperty("Cookie", Cookie);
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(connection.getInputStream()), "utf-8"));
         int x = 0, y = 0;
         for (String s; (s = bufferedReader.readLine()) != null; ) {
@@ -422,7 +422,10 @@ public class GetBilibili {
 
         /*通过自带 Bean 对象解析*/
         List<String> Link = new ArrayList<>();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(link).openStream(), "utf-8"));
+        URLConnection connection = new URL(link).openConnection();
+        connection.setRequestProperty("Cookie", Cookie);
+
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
         JsonObject jsonObject = new JsonParser().parse(bufferedReader).getAsJsonObject();
         JsonArray jsonArray = jsonObject.getAsJsonArray("durl");
         for (JsonElement durl : jsonArray) {
@@ -436,9 +439,9 @@ public class GetBilibili {
     }
 
     private static List<String> XML(String link) throws IOException, ParserConfigurationException, SAXException {
-        String cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=ayhy6i1s";
         URLConnection connection = new URL(link).openConnection();
-        connection.setRequestProperty("Cookie", cookie);
+        connection.setRequestProperty("Cookie", Cookie);
+
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
         StringBuilder stringBuilder = new StringBuilder();
         for (String s; (s = bufferedReader.readLine()) != null; ) {
