@@ -35,7 +35,7 @@ public class GetBilibili {
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
     private static final String Appkey = "NmY5MGE1OWFjNThhNDEyMw==";
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
-    private static final String Cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=9yly305j";
+    private static final String Cookie = "DedeUserID=1424743; DedeUserID__ckMd5=472e7fe30d4f15eb; SESSDATA=f204dbc8%2C1E88438047%2Cfe76287b; sid=9y6y864j";
     private static File Dir;
     private static File TempDir;
     private static String Video_Cid;
@@ -48,14 +48,7 @@ public class GetBilibili {
     private static Set<Process> Tasks = new HashSet<>();
 
     static {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                for (Process process : Tasks) {
-                    process.destroyForcibly();
-                }
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> Tasks.forEach(Process::destroyForcibly)));
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
@@ -277,30 +270,22 @@ public class GetBilibili {
     private static void listFile() throws IOException {
         File fileList = new File(TempDir, "2.txt");
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileList, false), "utf-8"));
-        File[] files = Dir.listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".flv") || name.endsWith(".mp4");
-            }
-        });
+        File[] files = Dir.listFiles((dir, name) -> name.endsWith(".flv") || name.endsWith(".mp4"));
 
         if (files != null) {
-            Arrays.sort(files, new Comparator<File>() {
-                @Override
-                public int compare(File o1, File o2) {
-                    String name1 = o1.getName();
-                    String name2 = o2.getName();
-                    String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
-                    String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
+            Arrays.sort(files, (o1, o2) -> {
+                String name1 = o1.getName();
+                String name2 = o2.getName();
+                String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
+                String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
 
-                    Pattern pattern = Pattern.compile("\\d+");
+                Pattern pattern = Pattern.compile("\\d+");
 
-                    Matcher matcher1 = pattern.matcher(s1);
-                    Matcher matcher2 = pattern.matcher(s2);
-                    Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
-                    Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
-                    return i1.compareTo(i2);
-                }
+                Matcher matcher1 = pattern.matcher(s1);
+                Matcher matcher2 = pattern.matcher(s2);
+                Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
+                Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
+                return i1.compareTo(i2);
             });
             for (File file : files) {
                 String path = file.getAbsolutePath();
