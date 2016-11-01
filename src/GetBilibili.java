@@ -135,26 +135,6 @@ public class GetBilibili {
     }
 
     private static void getCID(String url) throws IOException {
-        /*Jsoup 解析页面获得 Video_Cid*/
-//        Document doc = Jsoup.connect(url).userAgent(UserAgent).get();
-//        Element player = doc.getElementsByClass("scontent").select("script").get(0);
-//        String data = player.data();
-//        Video_Cid = data.substring(data.indexOf("cid") + 4, data.indexOf('&'));
-
-        /*原生解析页面获得 Video_Cid*/
-//        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL(url).openStream()), "utf-8"));
-//        Scanner scanner = new Scanner(bufferedReader);
-//        for (String s; scanner.hasNextLine(); ) {
-//            s = scanner.nextLine();
-//            if (s.contains("cid=")) {
-//                bufferedReader.close();
-//                Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
-//                break;
-//            }
-//        }
-//        bufferedReader.close();
-
-        /*原生解析页面获得 Video_Cid 和 Video_Title*/
         if (url.contains("bangumi")) {
             if (url.contains("movie")) {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
@@ -228,20 +208,6 @@ public class GetBilibili {
     }
 
     private static void getLink() throws IOException, NoSuchAlgorithmException {
-        /*通过 Jsoup 解析第三方 BiliBiliJJ 获得 Link*/
-//        String url = "http://www.bilibilijj.com/DownLoad/Cid/" + Video_Cid;
-//        Document doc = Jsoup.connect(url).userAgent(UserAgent).get();
-//        Link = new ArrayList<>();
-//        if (doc.baseUri().contains("DownLoad")) {
-//            Elements elements = doc.getElementsByClass("D").select("a[href]");
-//            for (Element element : elements) {
-//                Link.add(element.attr("href"));
-//            }
-//        } else if (doc.baseUri().contains("FreeDown")) {
-//            Link.add(doc.getElementsByClass("putong").parents().get(0).attr("href"));
-//        }
-
-        /*通过 JSON 解析官方 BiliBili 获得 Link*/
         StringBuilder SubLink = new StringBuilder().append("appkey=").append(new String(new BASE64Decoder().decodeBuffer(Appkey), "utf-8")).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
         String Sign = Hash(SubLink + new String(new BASE64Decoder().decodeBuffer(Secretkey), "utf-8"), "MD5");
         Link = Json("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
@@ -300,15 +266,6 @@ public class GetBilibili {
     }
 
     private static void mergeFLV() throws IOException, InterruptedException {
-        /*方案一*/
-//        String s1 = "cmd.exe /C start /W D:/ffmpeg.exe -f concat -i D:/2.txt -c copy D:/12.flv";
-//        Process exec1 = Runtime.getRuntime().exec(s1);
-//        exec1.waitFor();
-//        String s2 = "cmd.exe /C start /W D:/yamdi.exe -i D:/12.flv -o D:/123.flv";
-//        Process exec2 = Runtime.getRuntime().exec(s2);
-//        exec2.waitFor();
-
-        /*方案二*/
         File tempFLV = new File(Dir.getParent(), "123.flv");
         String finalFilePath = Dir.getParent() + "\\" + getFileName() + (Convert ? ".mp4" : ".flv");
 
@@ -403,11 +360,6 @@ public class GetBilibili {
     }
 
     private static String Hash(String str, String algorithm) throws NoSuchAlgorithmException {
-        /*方案一*/
-//        MessageDigest instance = MessageDigest.getInstance(algorithm);
-//        return new BigInteger(1, instance.digest(str.getBytes())).toString(16);//10->16
-
-        /*方案二*/
         MessageDigest instance = MessageDigest.getInstance(algorithm);
         byte[] digest = instance.digest(str.getBytes());
 
@@ -420,17 +372,6 @@ public class GetBilibili {
     }
 
     private static List<String> Json(String link) throws IOException {
-        /*通过自建 Bean 对象解析*/
-//        List<String> Link = new ArrayList<>();
-//        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(link).openStream(), "utf-8"));
-//        Video video = new Gson().fromJson(bufferedReader, Video.class);
-//        for (Url url : video.getDurl()) {
-//            Link.add(url.getUrl());
-//        }
-//        bufferedReader.close();
-//        return Link;
-
-        /*通过自带 Bean 对象解析*/
         List<String> Link = new ArrayList<>();
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
