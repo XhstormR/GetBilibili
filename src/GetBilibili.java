@@ -52,17 +52,6 @@ public class GetBilibili {
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
-        String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
-        Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
-        if (!Dir.exists()) {
-            Dir.mkdirs();
-        }
-        String tempPath = System.getenv("APPDATA");
-        TempDir = new File(tempPath, "GetBilibili");
-        if (!TempDir.exists()) {
-            TempDir.mkdirs();
-        }
-
         System.out.println();
         if (args.length < 1) {
             System.out.println("Error!!!");
@@ -88,6 +77,7 @@ public class GetBilibili {
                     Delete = args[1].equals("1");
                     Convert = args[2].equals("1");
                 }
+                createDirectory();
                 listFile();
                 mergeFLV();
                 break;
@@ -96,6 +86,7 @@ public class GetBilibili {
                     System.out.println("Error!!!");
                     return;
                 }
+                createDirectory();
                 getCID(args[1]);
                 if (args.length > 3) {
                     Convert = args[2].equals("1");
@@ -114,6 +105,7 @@ public class GetBilibili {
                 mergeFLV();
                 break;
             case "-j":
+                createDirectory();
                 Link = Json(args[1]);
                 saveLink();
                 downLoad();
@@ -121,6 +113,7 @@ public class GetBilibili {
                 mergeFLV();
                 break;
             case "-x":
+                createDirectory();
                 Link = XML(args[1]);
                 saveLink();
                 downLoad();
@@ -132,6 +125,19 @@ public class GetBilibili {
                 return;
         }
         System.out.println("\n" + "Done!!!");
+    }
+
+    private static void createDirectory() throws UnsupportedEncodingException {
+        String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
+        Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
+        if (!Dir.exists()) {
+            Dir.mkdirs();
+        }
+        String tempPath = System.getenv("APPDATA");
+        TempDir = new File(tempPath, "GetBilibili");
+        if (!TempDir.exists()) {
+            TempDir.mkdirs();
+        }
     }
 
     private static void getCID(String url) throws IOException {
