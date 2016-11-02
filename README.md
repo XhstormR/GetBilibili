@@ -1,7 +1,7 @@
 # GetBilibili
 ![](http://ww4.sinaimg.cn/large/a15b4afegw1f80cg69rtpg20sp0ehte3 "GetBilibili")
 
-[Download1](https://raw.githubusercontent.com/XhstormR/GetBilibili/master/GetBilibili.jar),[Download2](https://github.com/XhstormR/GetBilibili/releases/latest)
+[Download1](https://raw.githubusercontent.com/XhstormR/GetBilibili/master/GetBilibili.jar "GetBilibili"),[Download2](https://github.com/XhstormR/GetBilibili/releases/latest "GetBilibili")
 
 ## Link
 Get Bilibili Ultra-Definition Video Link
@@ -40,7 +40,7 @@ GetBilibili.jar -m
   * (Default: Jar Dir) Specify the download/merge directory
 
 ## Note
-现在的这个 Key 因使用次数过多而被限速了（影响 `-d` 选项，10 KB/S），也不知道多久能恢复。
+现在的这个 Key 因使用次数过多而被限速了（影响 `-d` 的原视频链接选项，10 KB/S），也不知道多久能恢复。
 
 而我也不打算找更多的 Key 了，毕竟这不是可持续性发展。
 
