@@ -192,13 +192,7 @@ public class GetBilibili {
                     int i = s.lastIndexOf("</a>");
                     String aid = s.substring(s.lastIndexOf('>', i) + 3, i);
                     BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8"));
-                    for (String s2; (s2 = bufferedReader2.readLine()) != null; ) {
-                        if (s2.contains("cid")) {
-                            int i2 = s2.indexOf("cid\":");
-                            Video_Cid = s2.substring(i2 + 5, i2 + 12);
-                            break;
-                        }
-                    }
+                    Video_Cid = new JsonParser().parse(bufferedReader2).getAsJsonArray().get(0).getAsJsonObject().get("cid").getAsString();
                     bufferedReader2.close();
                 }
                 if (s.contains("<h1 title=")) {
