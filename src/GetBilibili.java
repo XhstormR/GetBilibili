@@ -58,6 +58,7 @@ public class GetBilibili {
         options.addOption("l", true, "Get bilibili ultra-definition video link");
         options.addOption("d", true, "Download bilibili ultra-definition video");
         options.addOption("m", false, "Merge segmented video");
+        options.addOption("h", false, "Print a help message");
         options.addOption("delete", false, "(Default: false) Delete segmented video after completion");
         options.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion");
         options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory");
@@ -97,6 +98,12 @@ public class GetBilibili {
             listFile();
             mergeFLV();
             System.out.println("\n" + "Done!");
+            return;
+        }
+        if (parse.hasOption('h')) {
+            HelpFormatter help = new HelpFormatter();
+            help.setOptionComparator(null);
+            help.printHelp(100, "GetBilibili.jar", "", options, "", true);
             return;
         }
         HelpFormatter help = new HelpFormatter();
