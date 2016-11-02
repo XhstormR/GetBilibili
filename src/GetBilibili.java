@@ -77,15 +77,13 @@ public class GetBilibili {
         isConvert = parse.hasOption("convert");
 
         if (parse.getOptionValue('l') != null) {
-            String url = parse.getOptionValue('l');
-            generateLink(url);
+            generateLink(parse.getOptionValue('l'));
             showLink();
             System.out.println("\n" + "Done!");
             return;
         }
         if (parse.getOptionValue('d') != null) {
-            String url = parse.getOptionValue('d');
-            generateLink(url);
+            generateLink(parse.getOptionValue('d'));
             createDirectory(parse);
             saveLink();
             downLoad();
