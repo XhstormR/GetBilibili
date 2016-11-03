@@ -38,9 +38,9 @@ public class GetBilibili {
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
     private static File Dir;
     private static File TempDir;
+    private static String Cookie;//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
     private static String Video_Cid;
     private static String Video_Title;
-    private static String Cookie;//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
     private static long Video_Size;
     private static int Video_Length;
     private static List<String> Link;
@@ -280,21 +280,28 @@ public class GetBilibili {
         File tempFLV = new File(Dir.getParent(), "123.flv");
         String finalFilePath = Dir.getParent() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
 
-        System.out.println("\n" + "Merging...");
-        if (!new File(TempDir, "ffmpeg.exe").exists()) {
-            getEXE(FFmpegLink);
-        }
-        execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.getAbsolutePath());
-
-        if (isConvert) {
-            System.out.println("\n" + "Converting...");
-            execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-i", tempFLV.getAbsolutePath(), "-c", "copy", finalFilePath);
+        if (Link.size() == 1) {
+            String s = Link.get(0);
+            int i = s.indexOf('?');
+            String name = s.substring(s.lastIndexOf('/', i) + 1, i);
+            new File(Dir, name).renameTo(new File(Dir.getParent(), getFileName() + name.substring(name.lastIndexOf('.'))));//移动文件至上层目录
         } else {
             System.out.println("\n" + "Merging...");
-            if (!new File(TempDir, "yamdi.exe").exists()) {
-                getEXE(YamdiLink);
+            if (!new File(TempDir, "ffmpeg.exe").exists()) {
+                getEXE(FFmpegLink);
             }
-            execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", finalFilePath);
+            execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.getAbsolutePath());
+
+            if (isConvert) {
+                System.out.println("\n" + "Converting...");
+                execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-i", tempFLV.getAbsolutePath(), "-c", "copy", finalFilePath);
+            } else {
+                System.out.println("\n" + "Merging...");
+                if (!new File(TempDir, "yamdi.exe").exists()) {
+                    getEXE(YamdiLink);
+                }
+                execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", finalFilePath);
+            }
         }
 
         if (tempFLV.exists()) {
