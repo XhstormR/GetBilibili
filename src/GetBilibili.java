@@ -53,8 +53,8 @@ public class GetBilibili {
     private static long Video_Size;
     private static int Video_Length;
     private static List<String> Link;
-    private static boolean isDelete = false;
-    private static boolean isConvert = false;
+    private static boolean isDelete;
+    private static boolean isConvert;
     private static Set<Process> Tasks = new HashSet<>();
 
     static {
