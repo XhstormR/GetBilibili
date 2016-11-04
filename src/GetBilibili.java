@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.lang.ProcessBuilder.Redirect;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
@@ -242,7 +243,7 @@ public class GetBilibili {
         if (Files.notExists(Paths.get(TempDir.toString(), "aria2c.exe"))) {
             getEXE(Aria2Link);
         }
-        execute(true, TempDir.toString() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
+        execute(TempDir.toString() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
     }
 
     private static void listFile() throws IOException {
@@ -286,17 +287,17 @@ public class GetBilibili {
             if (Files.notExists(Paths.get(TempDir.toString(), "ffmpeg.exe"))) {
                 getEXE(FFmpegLink);
             }
-            execute(true, TempDir.toString() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.toString());
+            execute(TempDir.toString() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", "-y", tempFLV.toString());
 
             if (isConvert) {
                 System.out.println("\n" + "Converting...");
-                execute(true, TempDir.toString() + "/ffmpeg.exe", "-i", tempFLV.toString(), "-c", "copy", finalFilePath);
+                execute(TempDir.toString() + "/ffmpeg.exe", "-i", tempFLV.toString(), "-c", "copy", "-y", finalFilePath);
             } else {
                 System.out.println("\n" + "Merging...");
                 if (Files.notExists(Paths.get(TempDir.toString(), "yamdi.exe"))) {
                     getEXE(YamdiLink);
                 }
-                execute(true, TempDir.toString() + "/yamdi.exe", "-i", tempFLV.toString(), "-o", finalFilePath);
+                execute(TempDir.toString() + "/yamdi.exe", "-i", tempFLV.toString(), "-o", finalFilePath);
             }
         }
 
@@ -331,46 +332,24 @@ public class GetBilibili {
         if (Files.notExists(Paths.get(TempDir.toString(), "7zr.exe"))) {
             getFile(SevenZipLink);
         }
-        Path file = getFile(link);
-        execute(false, TempDir.toString() + "/7zr.exe", "x", file.getFileName().toString());
-        Files.deleteIfExists(file);
+        getFile(link);
+        execute(TempDir.toString() + "/7zr.exe", "x", "-y", link.substring(link.lastIndexOf('/') + 1));
     }
 
-    private static Path getFile(String link) throws IOException {
-        URL url = new URL(link);
-        URLConnection connection = url.openConnection();
+    private static void getFile(String link) throws IOException {
+        URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("User-Agent", UserAgent);
-        String path = url.getFile();
-        Path file = Paths.get(TempDir.toString(), path.substring(path.lastIndexOf('/') + 1));
+        Path path = Paths.get(TempDir.toString(), link.substring(link.lastIndexOf('/') + 1));
+        path.toFile().deleteOnExit();
 
         try (InputStream inputStream = connection.getInputStream()) {
-            Files.copy(inputStream, file, REPLACE_EXISTING);
+            Files.copy(inputStream, path, REPLACE_EXISTING);
         }
-
-        return file;
     }
 
-    private static void execute(boolean show, String... command) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(command).directory(TempDir.toFile()).redirectErrorStream(true).start();
+    private static void execute(String... command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(command).directory(TempDir.toFile()).redirectErrorStream(true).redirectOutput(Redirect.INHERIT).redirectInput(Redirect.INHERIT).start();
         Tasks.add(process);
-        new Thread(() -> {
-            PrintWriter printWriter = new PrintWriter(process.getOutputStream(), true);
-            for (; process.isAlive(); ) {
-                printWriter.println('y');
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"))) {
-            for (String s; (s = bufferedReader.readLine()) != null; ) {
-                if (show) {
-                    System.out.println(s);
-                }
-            }
-        }
         process.waitFor();
         Tasks.remove(process);
     }
