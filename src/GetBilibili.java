@@ -16,11 +16,17 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -38,8 +44,8 @@ public class GetBilibili {
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
     private static final String Appkey = "NmY5MGE1OWFjNThhNDEyMw==";
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
-    private static File Dir;
-    private static File TempDir;
+    private static Path Dir;
+    private static Path TempDir;
     private static String Cookie;//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
     private static String Video_Cid;
     private static String Video_Title;
@@ -126,22 +132,22 @@ public class GetBilibili {
         }
     }
 
-    private static void createDirectory(CommandLine parse) throws UnsupportedEncodingException {
+    private static void createDirectory(CommandLine parse) throws IOException {
         String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
-        Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
-        if (!Dir.exists()) {
-            Dir.mkdirs();
+        Dir = Paths.get(path.substring(1, path.lastIndexOf('/') + 1), "GetBilibili");
+        if (Files.notExists(Dir)) {
+            Files.createDirectories(Dir);
         }
         String tempPath = System.getenv("APPDATA");
-        TempDir = new File(tempPath, "GetBilibili");
-        if (!TempDir.exists()) {
-            TempDir.mkdirs();
+        TempDir = Paths.get(tempPath, "GetBilibili");
+        if (Files.notExists(TempDir)) {
+            Files.createDirectories(TempDir);
         }
         if (parse.getOptionValue("dir") != null) {
-            Dir.delete();
-            Dir = new File(parse.getOptionValue("dir"), "GetBilibili");
-            if (!Dir.exists()) {
-                Dir.mkdirs();
+            Files.deleteIfExists(Dir);
+            Dir = Paths.get(parse.getOptionValue("dir"), "GetBilibili");
+            if (Files.notExists(Dir)) {
+                Files.createDirectories(Dir);
             }
         }
     }
@@ -227,97 +233,84 @@ public class GetBilibili {
     }
 
     private static void saveLink() throws IOException {
-        File link = new File(TempDir, "1.txt");
-        try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(link, false), "utf-8"))) {
-            for (String s : Link) {
-                bufferedWriter.write(s);
-                bufferedWriter.newLine();
-            }
-        }
-        if (link.exists()) {
-            link.deleteOnExit();
-        }
+        Path link = Paths.get(TempDir.toString(), "1.txt");
+        link.toFile().deleteOnExit();
+        Files.write(link, Link, Charset.forName("utf-8"));
     }
 
     private static void downLoad() throws IOException, InterruptedException {
-        if (!new File(TempDir, "aria2c.exe").exists()) {
+        if (Files.notExists(Paths.get(TempDir.toString(), "aria2c.exe"))) {
             getEXE(Aria2Link);
         }
-        execute(true, TempDir.getAbsolutePath() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.getAbsolutePath(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
+        execute(true, TempDir.toString() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
     }
 
     private static void listFile() throws IOException {
-        File fileList = new File(TempDir, "2.txt");
-        File[] files = Dir.listFiles((dir, name) -> name.endsWith(".flv") || name.endsWith(".mp4"));
+        Path fileList = Paths.get(TempDir.toString(), "2.txt");
+        fileList.toFile().deleteOnExit();
 
-        if (files != null) {
-            Arrays.sort(files, (o1, o2) -> {
-                String name1 = o1.getName();
-                String name2 = o2.getName();
-                String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
-                String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
+        List<Path> paths = new ArrayList<>();
+        Files.list(Dir).filter((path) -> path.getFileName().toString().endsWith(".flv") || path.getFileName().toString().endsWith(".mp4")).sorted((path1, path2) -> {
+            String name1 = path1.getFileName().toString();
+            String name2 = path2.getFileName().toString();
+            String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
+            String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
 
-                Pattern pattern = Pattern.compile("\\d+");
+            Pattern pattern = Pattern.compile("\\d+");
 
-                Matcher matcher1 = pattern.matcher(s1);
-                Matcher matcher2 = pattern.matcher(s2);
-                Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
-                Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
-                return i1.compareTo(i2);
-            });
-            try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileList, false), "utf-8"))) {
-                for (File file : files) {
-                    String path = file.getAbsolutePath();
-                    bufferedWriter.write(new StringBuilder("file ''").insert(6, path).toString());
-                    bufferedWriter.newLine();
-                }
+            Matcher matcher1 = pattern.matcher(s1);
+            Matcher matcher2 = pattern.matcher(s2);
+            Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
+            Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
+            return i1.compareTo(i2);
+        }).forEachOrdered(paths::add);
+
+        try (PrintWriter printWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(fileList), "utf-8")))) {
+            for (Path path : paths) {
+                printWriter.println(new StringBuilder("file ''").insert(6, path.toString()).toString());
             }
-        }
-        if (fileList.exists()) {
-            fileList.deleteOnExit();
         }
     }
 
     private static void mergeFLV() throws IOException, InterruptedException {
-        File tempFLV = new File(Dir.getParent(), "123.flv");
+        Path tempFLV = Paths.get(Dir.getParent().toString(), "123.flv");
         String finalFilePath = Dir.getParent() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
 
         if (Link != null && Link.size() == 1) {
             String s = Link.get(0);
             int i = s.indexOf('?');
             String name = s.substring(s.lastIndexOf('/', i) + 1, i);
-            Files.move(new File(Dir, name).toPath(), new File(Dir.getParent(), getFileName() + name.substring(name.lastIndexOf('.'))).toPath(), REPLACE_EXISTING);//移动文件至上层目录
+            Files.move(Paths.get(Dir.toString(), name), Paths.get(Dir.getParent().toString(), getFileName() + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING);//移动文件至上层目录
         } else {
             System.out.println("\n" + "Merging...");
-            if (!new File(TempDir, "ffmpeg.exe").exists()) {
+            if (Files.notExists(Paths.get(TempDir.toString(), "ffmpeg.exe"))) {
                 getEXE(FFmpegLink);
             }
-            execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.getAbsolutePath());
+            execute(true, TempDir.toString() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.toString());
 
             if (isConvert) {
                 System.out.println("\n" + "Converting...");
-                execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-i", tempFLV.getAbsolutePath(), "-c", "copy", finalFilePath);
+                execute(true, TempDir.toString() + "/ffmpeg.exe", "-i", tempFLV.toString(), "-c", "copy", finalFilePath);
             } else {
                 System.out.println("\n" + "Merging...");
-                if (!new File(TempDir, "yamdi.exe").exists()) {
+                if (Files.notExists(Paths.get(TempDir.toString(), "yamdi.exe"))) {
                     getEXE(YamdiLink);
                 }
-                execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", finalFilePath);
+                execute(true, TempDir.toString() + "/yamdi.exe", "-i", tempFLV.toString(), "-o", finalFilePath);
             }
         }
 
-        if (tempFLV.exists()) {
-            tempFLV.deleteOnExit();
-        }
+        Files.deleteIfExists(tempFLV);
 
         if (isDelete) {
-            File[] files = Dir.listFiles();
-            if (files != null) {
-                for (File flv : files) {
-                    flv.delete();
+            Files.list(Dir).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            }
-            Dir.deleteOnExit();
+            });
+            Files.deleteIfExists(Dir);
         }
     }
 
@@ -335,36 +328,30 @@ public class GetBilibili {
     }
 
     private static void getEXE(String link) throws IOException, InterruptedException {
-        if (!new File(TempDir, "7zr.exe").exists()) {
+        if (Files.notExists(Paths.get(TempDir.toString(), "7zr.exe"))) {
             getFile(SevenZipLink);
         }
-        File file = getFile(link);
-        execute(false, TempDir.getAbsolutePath() + "/7zr.exe", "x", file.getName());
-        if (file.exists()) {
-            file.delete();
-        }
+        Path file = getFile(link);
+        execute(false, TempDir.toString() + "/7zr.exe", "x", file.getFileName().toString());
+        Files.deleteIfExists(file);
     }
 
-    private static File getFile(String link) throws IOException {
+    private static Path getFile(String link) throws IOException {
         URL url = new URL(link);
         URLConnection connection = url.openConnection();
         connection.setRequestProperty("User-Agent", UserAgent);
         String path = url.getFile();
-        File file = new File(TempDir, path.substring(path.lastIndexOf('/') + 1));
+        Path file = Paths.get(TempDir.toString(), path.substring(path.lastIndexOf('/') + 1));
 
-        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream(), 32 * 1024);
-             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, false), 32 * 1024)) {
-            byte[] bytes = new byte[32 * 1024];
-            for (int read; (read = bufferedInputStream.read(bytes)) != -1; ) {
-                bufferedOutputStream.write(bytes, 0, read);
-            }
+        try (InputStream inputStream = connection.getInputStream()) {
+            Files.copy(inputStream, file, REPLACE_EXISTING);
         }
 
         return file;
     }
 
     private static void execute(boolean show, String... command) throws IOException, InterruptedException {
-        Process process = new ProcessBuilder(command).directory(TempDir).redirectErrorStream(true).start();
+        Process process = new ProcessBuilder(command).directory(TempDir.toFile()).redirectErrorStream(true).start();
         Tasks.add(process);
         new Thread(() -> {
             PrintWriter printWriter = new PrintWriter(process.getOutputStream(), true);
