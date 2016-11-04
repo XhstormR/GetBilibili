@@ -16,6 +16,7 @@ import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -27,6 +28,7 @@ import java.util.zip.ZipException;
 
 import static java.lang.Character.UnicodeBlock.KATAKANA;
 import static java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 public class GetBilibili {
     private static final String UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.89 Safari/537.36";
@@ -284,7 +286,7 @@ public class GetBilibili {
             String s = Link.get(0);
             int i = s.indexOf('?');
             String name = s.substring(s.lastIndexOf('/', i) + 1, i);
-            new File(Dir, name).renameTo(new File(Dir.getParent(), getFileName() + name.substring(name.lastIndexOf('.'))));//移动文件至上层目录
+            Files.move(new File(Dir, name).toPath(), new File(Dir.getParent(), getFileName() + name.substring(name.lastIndexOf('.'))).toPath(), REPLACE_EXISTING);//移动文件至上层目录
         } else {
             System.out.println("\n" + "Merging...");
             if (!new File(TempDir, "ffmpeg.exe").exists()) {
