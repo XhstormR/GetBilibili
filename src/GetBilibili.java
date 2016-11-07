@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
@@ -249,20 +250,23 @@ public class GetBilibili {
         Path fileList = TempDir.resolve("2.txt");
         fileList.toFile().deleteOnExit();
 
-        Path[] paths = Files.list(Dir).filter((path) -> path.getFileName().toString().endsWith(".flv") || path.getFileName().toString().endsWith(".mp4")).sorted((path1, path2) -> {
-            String name1 = path1.getFileName().toString();
-            String name2 = path2.getFileName().toString();
-            String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
-            String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
+        Path[] paths;
+        try (Stream<Path> list = Files.list(Dir)) {
+            paths = list.filter((path) -> path.getFileName().toString().endsWith(".flv") || path.getFileName().toString().endsWith(".mp4")).sorted((path1, path2) -> {
+                String name1 = path1.getFileName().toString();
+                String name2 = path2.getFileName().toString();
+                String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
+                String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
 
-            Pattern pattern = Pattern.compile("\\d+");
+                Pattern pattern = Pattern.compile("\\d+");
 
-            Matcher matcher1 = pattern.matcher(s1);
-            Matcher matcher2 = pattern.matcher(s2);
-            Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
-            Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
-            return i1.compareTo(i2);
-        }).toArray(Path[]::new);
+                Matcher matcher1 = pattern.matcher(s1);
+                Matcher matcher2 = pattern.matcher(s2);
+                Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
+                Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
+                return i1.compareTo(i2);
+            }).toArray(Path[]::new);
+        }
 
         try (PrintWriter printWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(fileList), "utf-8")))) {
             for (Path path : paths) {
@@ -302,13 +306,15 @@ public class GetBilibili {
         Files.deleteIfExists(tempFile);
 
         if (isDelete) {
-            Files.list(Dir).forEach(path -> {
-                try {
-                    Files.deleteIfExists(path);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
+            try (Stream<Path> list = Files.list(Dir)) {
+                list.forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
             Files.deleteIfExists(Dir);
         }
     }
