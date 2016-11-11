@@ -272,14 +272,14 @@ public class GetBilibili {
     }
 
     private static void mergeFLV() throws IOException, InterruptedException {
-        Path tempFile = Dir.getParent().resolve("123.flv");
-        Path finalFile = Dir.getParent().resolve(getFileName() + (isConvert ? ".mp4" : ".flv"));
+        Path tempFile = Dir.resolveSibling("123.flv");
+        Path finalFile = Dir.resolveSibling(getFileName() + (isConvert ? ".mp4" : ".flv"));
 
         if (Link != null && Link.size() == 1) {
             String s = Link.get(0);
             int i = s.indexOf('?');
             String name = s.substring(s.lastIndexOf('/', i) + 1, i);
-            Files.move(Dir.resolve(name), Dir.getParent().resolve(getFileName() + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING);//移动文件至上层目录
+            Files.move(Dir.resolve(name), Dir.resolveSibling(getFileName() + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING);//移动文件至上层目录
         } else {
             System.out.println("\nMerging...");
             if (Files.notExists(TempDir.resolve("ffmpeg.exe"))) {
