@@ -1,5 +1,8 @@
 import com.google.gson.JsonParser
-import org.apache.commons.cli.*
+import org.apache.commons.cli.CommandLine
+import org.apache.commons.cli.DefaultParser
+import org.apache.commons.cli.HelpFormatter
+import org.apache.commons.cli.Options
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
 import java.io.*
@@ -29,46 +32,37 @@ object GetBilibili {
     private val SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe"
     private val Appkey = "NmY5MGE1OWFjNThhNDEyMw=="
     private val Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY="
-    private var Dir: Path? = null
-    private var TempDir: Path? = null
-    private var Cookie: String? = null//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
-    private var Video_Cid: String? = null
-    private var Video_Title: String? = null
-    private var Video_Size: Long = 0
-    private var Video_Length: Int = 0
-    private var isDelete: Boolean = false
-    private var isConvert: Boolean = false
-    private var Link: List<String>? = null
-    private val Tasks = HashSet<Process>()
+    private val parse: CommandLine  by lazy { DefaultParser().parse(options, args) }
+    private val dir: Path by lazy { if (parse.getOptionValue("dir") != null) Paths.get(parse.getOptionValue("dir"), "GetBilibili") else URLDecoder.decode(GetBilibili::class.java.protectionDomain.codeSource.location.path, "utf-8")!!.let { Paths.get(it.substring(1, it.lastIndexOf('/') + 1), "GetBilibili") } }
+    private val cookie: String by lazy { parse.getOptionValue("cookie") ?: "" }//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
+    private val isDelete: Boolean by lazy { parse.hasOption("delete") }
+    private val isConvert: Boolean by lazy { parse.hasOption("convert") }
+    private val videoLink = ArrayList<String>()
+    private val tasks = HashSet<Process>()
+    private val tempDir = Paths.get(System.getenv("APPDATA"), "GetBilibili")
+    private val options = Options()
+    private var videoSize = 0L
+    private var videoLength = 0
+    private var videoCid: String? = null
+    private var videoTitle: String? = null
+    private var args: Array<String>? = null
 
     init {
-        Runtime.getRuntime().addShutdownHook(Thread { Tasks.forEach { it.destroyForcibly() } })
-    }
-
-    @JvmStatic fun main(args: Array<String>) {
-        println()
-        val options = Options()
+        Runtime.getRuntime().addShutdownHook(Thread { tasks.forEach { it.destroyForcibly() } })
         options.addOption("l", true, "Get bilibili ultra-definition video link")
         options.addOption("d", true, "Download bilibili ultra-definition video")
         options.addOption("m", false, "Merge segmented video")
         options.addOption("h", false, "Print a help message")
         options.addOption("delete", false, "(Default: false) Delete segmented video after completion")
         options.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion")
-        options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory")
+        options.addOption("dir", true, "(Default: Jar dir) Specify the download/merge directory")
         options.addOption("cookie", true, "(Default: null) Specify the cookie")
+    }
 
-        val parse = try {
-            DefaultParser().parse(options, args)
-        } catch (e: ParseException) {
-            println(e.message + "\n")
-            printHelp(options)
-            return
-        }
+    @JvmStatic fun main(args: Array<String>) {
+        this.args = args
 
-        isDelete = parse.hasOption("delete")
-        isConvert = parse.hasOption("convert")
-        Cookie = if (parse.getOptionValue("cookie") != null) parse.getOptionValue("cookie") else ""
-
+        println()
         if (parse.getOptionValue('l') != null) {
             generateLink(parse.getOptionValue('l'))
             showLink()
@@ -77,7 +71,7 @@ object GetBilibili {
         }
         if (parse.getOptionValue('d') != null) {
             generateLink(parse.getOptionValue('d'))
-            createDirectory(parse)
+            createDirectory()
             saveLink()
             downLoad()
             listFile()
@@ -86,20 +80,20 @@ object GetBilibili {
             return
         }
         if (parse.hasOption('m')) {
-            createDirectory(parse)
+            createDirectory()
             listFile()
             mergeFLV()
             println("\nDone!")
             return
         }
         if (parse.hasOption('h')) {
-            printHelp(options)
+            printHelp()
             return
         }
-        printHelp(options)
+        printHelp()
     }
 
-    private fun printHelp(options: Options) {
+    private fun printHelp() {
         val help = HelpFormatter()
         help.optionComparator = null
         help.printHelp(150, "GetBilibili.jar", "", options, "", true)
@@ -107,35 +101,27 @@ object GetBilibili {
 
     private fun generateLink(url: String) {
         if (url.contains("playurl") && url.contains("json")) {
-            Link = parseJSON(url)
+            parseJSON(url)
         } else if (url.contains("playurl")) {
-            Link = parseXML(url)
+            parseXML(url)
         } else {
             getCID(url)
             getLink()
         }
     }
 
-    private fun createDirectory(parse: CommandLine) {
-        val tempPath = System.getenv("APPDATA")
-        TempDir = Paths.get(tempPath, "GetBilibili")
-        if (parse.getOptionValue("dir") != null) {
-            Dir = Paths.get(parse.getOptionValue("dir"), "GetBilibili")
-        } else {
-            val path = URLDecoder.decode(GetBilibili::class.java.protectionDomain.codeSource.location.path, "utf-8")
-            Dir = Paths.get(path.substring(1, path.lastIndexOf('/') + 1), "GetBilibili")
+    private fun createDirectory() {
+        if (Files.notExists(tempDir)) {
+            Files.createDirectories(tempDir)
         }
-        if (Files.notExists(TempDir)) {
-            Files.createDirectories(TempDir)
-        }
-        if (Files.notExists(Dir)) {
-            Files.createDirectories(Dir)
+        if (Files.notExists(dir)) {
+            Files.createDirectories(dir)
         }
     }
 
     private fun getCID(url: String) {
         val connection = URL(url).openConnection()
-        connection.setRequestProperty("Cookie", Cookie)
+        connection.setRequestProperty("cookie", cookie)
 
         val bufferedReader = try {
             BufferedReader(InputStreamReader(GZIPInputStream(connection.inputStream), "utf-8"))
@@ -143,48 +129,48 @@ object GetBilibili {
             BufferedReader(InputStreamReader(connection.inputStream, "utf-8"))
         }
 
-        var x = 0
-        var y = 0
+        var x = false
+        var y = false
         bufferedReader.useLines {
             it.forEach {
                 if (it.contains("<div class=\"msgbox\"><div class=\"content\"><a id='login-btn'>登录</a></div></div>")) {
-                    throw IllegalArgumentException("此为隐藏视频，需要设置 Cookie。")
+                    throw IllegalArgumentException("此为隐藏视频，需要设置 cookie。")
                 }
-                if (x != 1 && y != 1) {
+                if (!x && !y) {
                     when {
                         url.contains("video") -> {
                             if (it.contains("cid=")) {
-                                x = 1
-                                Video_Cid = it.substring(it.indexOf("cid=") + 4, it.indexOf('&'))
+                                x = true
+                                videoCid = it.substring(it.indexOf("cid=") + 4, it.indexOf('&'))
                             }
                             if (it.contains("<h1 title=")) {
-                                y = 1
+                                y = true
                                 val i = it.lastIndexOf("</h1>")
-                                Video_Title = it.substring(it.lastIndexOf('>', i) + 1, i)
+                                videoTitle = it.substring(it.lastIndexOf('>', i) + 1, i)
                             }
                         }
                         url.contains("movie") -> {
                             if (it.contains("cid=")) {
-                                x = 1
-                                Video_Cid = it.substring(it.indexOf("cid=") + 5, it.indexOf("cid=") + 13)
+                                x = true
+                                videoCid = it.substring(it.indexOf("cid=") + 5, it.indexOf("cid=") + 13)
                             }
                             if (it.contains("pay_top_msg")) {
-                                y = 1
+                                y = true
                                 val i = it.lastIndexOf("</div>")
-                                Video_Title = it.substring(it.lastIndexOf('>', i) + 1, i)
+                                videoTitle = it.substring(it.lastIndexOf('>', i) + 1, i)
                             }
                         }
                         url.contains("anime") -> {
                             if (it.contains("v-av-link")) {
-                                x = 1
+                                x = true
                                 val i = it.lastIndexOf("</a>")
                                 val aid = it.substring(it.lastIndexOf('>', i) + 3, i)
-                                BufferedReader(InputStreamReader(GZIPInputStream(URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8")).use { bufferedReader2 -> Video_Cid = JsonParser().parse(bufferedReader2).asJsonArray.get(0).asJsonObject.get("cid").asString }
+                                BufferedReader(InputStreamReader(GZIPInputStream(URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8")).use { videoCid = JsonParser().parse(it).asJsonArray.get(0).asJsonObject.get("cid").asString }
                             }
                             if (it.contains("<h1 title=")) {
-                                y = 1
+                                y = true
                                 val i = it.lastIndexOf("</h1>")
-                                Video_Title = it.substring(it.lastIndexOf('>', i) + 1, i)
+                                videoTitle = it.substring(it.lastIndexOf('>', i) + 1, i)
                             }
                         }
                         else -> throw IllegalStateException("此链接需要更新，请告知开发者！")
@@ -195,41 +181,41 @@ object GetBilibili {
     }
 
     private fun getLink() {
-        val SubLink = StringBuilder().append("appkey=").append(String(Base64.getDecoder().decode(Appkey))).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv")
+        val SubLink = StringBuilder().append("appkey=").append(String(Base64.getDecoder().decode(Appkey))).append("&cid=").append(videoCid).append("&otype=json&quality=3&type=flv")
         val Sign = hash(SubLink.toString() + String(Base64.getDecoder().decode(Secretkey)), "MD5")
-        Link = parseJSON("http://interface.bilibili.com/playurl?$SubLink&sign=$Sign")
+        parseJSON("http://interface.bilibili.com/playurl?$SubLink&sign=$Sign")
     }
 
     private fun showLink() {
         val sizeFormat = DecimalFormat("0.00")
         val numFormat = DecimalFormat("0,000")
         val timeFormat = DecimalFormat("00")
-        val s = Video_Length / 1000//秒
+        val s = videoLength / 1000//秒
         val m = s / 60//分
         val h = m / 60//时
-        System.out.printf("Title: %s\n", fileName + if (isConvert) ".mp4" else ".flv")
-        System.out.printf("Total Size: %s MB (%s bytes)\tTotal Time: %s:%s:%s (%s:%s Mins)\n\n", sizeFormat.format(Video_Size / (1024 * 1024.0)), numFormat.format(Video_Size), timeFormat.format(h.toLong()), timeFormat.format((m % 60).toLong()), timeFormat.format((s % 60).toLong()), timeFormat.format(m.toLong()), timeFormat.format((s % 60).toLong()))
-        Link!!.forEach(::println)
+        println("Title: ${fileName + if (isConvert) ".mp4" else ".flv"}")
+        System.out.printf("Total Size: %s MB (%s bytes)\tTotal Time: %s:%s:%s (%s:%s Mins)\n\n", sizeFormat.format(videoSize / (1024 * 1024.0)), numFormat.format(videoSize), timeFormat.format(h.toLong()), timeFormat.format((m % 60).toLong()), timeFormat.format((s % 60).toLong()), timeFormat.format(m.toLong()), timeFormat.format((s % 60).toLong()))
+        videoLink.forEach(::println)
     }
 
     private fun saveLink() {
-        val link = TempDir!!.resolve("1.txt")
+        val link = tempDir.resolve("1.txt")
         link.toFile().deleteOnExit()
-        Files.write(link, Link, Charset.forName("utf-8"))
+        Files.write(link, videoLink, Charset.forName("utf-8"))
     }
 
     private fun downLoad() {
-        if (Files.notExists(TempDir!!.resolve("aria2c.exe"))) {
+        if (Files.notExists(tempDir.resolve("aria2c.exe"))) {
             getEXE(Aria2Link)
         }
-        execute(TempDir!!.resolve("aria2c.exe").toString(), "--input-file=1.txt", "--dir=" + Dir!!.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false")
+        execute(tempDir.resolve("aria2c.exe").toString(), "--input-file=1.txt", "--dir=" + dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=5M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false")
     }
 
     private fun listFile() {
-        val fileList = TempDir!!.resolve("2.txt")
+        val fileList = tempDir.resolve("2.txt")
         fileList.toFile().deleteOnExit()
 
-        val paths: List<File> = Dir!!.toFile().listFiles { dir, name -> name.endsWith(".flv") || name.endsWith(".mp4") }.sortedBy {
+        val paths: List<File> = dir.toFile().listFiles { dir, name -> name.endsWith(".flv") || name.endsWith(".mp4") }.sortedBy {
             val name1 = it.name
             val s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."))
             val pattern = Pattern.compile("\\d+")
@@ -242,48 +228,48 @@ object GetBilibili {
     }
 
     private fun mergeFLV() {
-        val tempFile = Dir!!.resolveSibling("123.flv")
-        val finalFile = Dir!!.resolveSibling(fileName + if (isConvert) ".mp4" else ".flv")
+        val tempFile = dir.resolveSibling("123.flv")
+        val finalFile = dir.resolveSibling(fileName + if (isConvert) ".mp4" else ".flv")
 
-        if (Link != null && Link!!.size == 1) {
-            val s = Link!![0]
+        if (videoLink.size == 1) {
+            val s = videoLink[0]
             val i = s.indexOf('?')
             val name = s.substring(s.lastIndexOf('/', i) + 1, i)
-            Files.move(Dir!!.resolve(name), Dir!!.resolveSibling(fileName + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING)//移动文件至上层目录
+            Files.move(dir.resolve(name), dir.resolveSibling(fileName + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING)//移动文件至上层目录
         } else {
             println("\nMerging...")
-            if (Files.notExists(TempDir!!.resolve("ffmpeg.exe"))) {
+            if (Files.notExists(tempDir.resolve("ffmpeg.exe"))) {
                 getEXE(FFmpegLink)
             }
-            execute(TempDir!!.resolve("ffmpeg.exe").toString(), "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", "-y", tempFile.toString())
+            execute(tempDir.resolve("ffmpeg.exe").toString(), "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", "-y", tempFile.toString())
 
             if (isConvert) {
                 println("\nConverting...")
-                execute(TempDir!!.resolve("ffmpeg.exe").toString(), "-i", tempFile.toString(), "-c", "copy", "-y", finalFile.toString())
+                execute(tempDir.resolve("ffmpeg.exe").toString(), "-i", tempFile.toString(), "-c", "copy", "-y", finalFile.toString())
             } else {
                 println("\nMerging...")
-                if (Files.notExists(TempDir!!.resolve("yamdi.exe"))) {
+                if (Files.notExists(tempDir.resolve("yamdi.exe"))) {
                     getEXE(YamdiLink)
                 }
-                execute(TempDir!!.resolve("yamdi.exe").toString(), "-i", tempFile.toString(), "-o", finalFile.toString())
+                execute(tempDir.resolve("yamdi.exe").toString(), "-i", tempFile.toString(), "-o", finalFile.toString())
             }
         }
 
         Files.deleteIfExists(tempFile)
 
         if (isDelete) {
-            Dir!!.toFile().listFiles().forEach { Files.deleteIfExists(it.toPath()) }
-            Files.deleteIfExists(Dir!!)
+            dir.toFile().listFiles().forEach { Files.deleteIfExists(it.toPath()) }
+            Files.deleteIfExists(dir)
         }
     }
 
     private val fileName: String
         get() {
-            if (Video_Title == null) {
+            if (videoTitle == null) {
                 return "Video"
             }
             val stringBuilder = StringBuilder()
-            for (c in Video_Title!!.toCharArray()) {
+            for (c in videoTitle!!.toCharArray()) {
                 val unicodeBlock = Character.UnicodeBlock.of(c)
                 stringBuilder.append(if (unicodeBlock == LATIN_1_SUPPLEMENT || unicodeBlock == KATAKANA) "" else c)
             }
@@ -292,27 +278,27 @@ object GetBilibili {
         }
 
     private fun getEXE(link: String) {
-        if (Files.notExists(TempDir!!.resolve("7zr.exe"))) {
+        if (Files.notExists(tempDir.resolve("7zr.exe"))) {
             getFile(SevenZipLink)
         }
         getFile(link)
-        execute(TempDir!!.resolve("7zr.exe").toString(), "x", "-y", link.substring(link.lastIndexOf('/') + 1))
+        execute(tempDir.resolve("7zr.exe").toString(), "x", "-y", link.substring(link.lastIndexOf('/') + 1))
     }
 
     private fun getFile(link: String) {
         val connection = URL(link).openConnection()
         connection.setRequestProperty("User-Agent", UserAgent)
-        val path = TempDir!!.resolve(link.substring(link.lastIndexOf('/') + 1))
+        val path = tempDir.resolve(link.substring(link.lastIndexOf('/') + 1))
         path.toFile().deleteOnExit()
 
-        connection.inputStream.use { inputStream -> Files.copy(inputStream, path, REPLACE_EXISTING) }
+        connection.inputStream.use { Files.copy(it, path, REPLACE_EXISTING) }
     }
 
     private fun execute(vararg command: String) {
-        val process = ProcessBuilder(*command).directory(TempDir!!.toFile()).redirectErrorStream(true).redirectOutput(Redirect.INHERIT).redirectInput(Redirect.INHERIT).start()
-        Tasks.add(process)
+        val process = ProcessBuilder(*command).directory(tempDir.toFile()).redirectErrorStream(true).redirectOutput(Redirect.INHERIT).redirectInput(Redirect.INHERIT).start()
+        tasks.add(process)
         process.waitFor()
-        Tasks.remove(process)
+        tasks.remove(process)
     }
 
     private fun hash(str: String, algorithm: String): String {
@@ -327,44 +313,40 @@ object GetBilibili {
         return stringBuilder.toString()
     }
 
-    private fun parseJSON(link: String): List<String> {
-        val Link = ArrayList<String>()
+    private fun parseJSON(link: String) {
         val connection = URL(link).openConnection()
-        connection.setRequestProperty("Cookie", Cookie)
+        connection.setRequestProperty("cookie", cookie)
 
-        BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).use { bufferedReader ->
-            val jsonObject = JsonParser().parse(bufferedReader).asJsonObject
+        BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).use {
+            val jsonObject = JsonParser().parse(it).asJsonObject
             val jsonArray = jsonObject.getAsJsonArray("durl")
-            jsonArray.forEach { durl ->
-                val durlObject = durl.asJsonObject
-                Link.add(durlObject.get("url").asString)
-                Video_Size += durlObject.get("size").asInt.toLong()
-                Video_Length += durlObject.get("length").asInt
+            jsonArray.forEach {
+                val durlObject = it.asJsonObject
+                videoLink.add(durlObject.get("url").asString)
+                videoSize += durlObject.get("size").asInt.toLong()
+                videoLength += durlObject.get("length").asInt
             }
         }
-        return Link
     }
 
-    private fun parseXML(link: String): List<String> {
+    private fun parseXML(link: String) {
         val connection = URL(link).openConnection()
-        connection.setRequestProperty("Cookie", Cookie)
+        connection.setRequestProperty("cookie", cookie)
         val xml: String = BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).useLines {
             val stringBuilder = StringBuilder()
             it.forEach { stringBuilder.append(it) }
-            stringBuilder.toString()
-        }/*XML 文件*/
+            stringBuilder.toString()/*XML 文件*/
+        }
 
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val document = documentBuilder.parse(InputSource(StringReader(xml)))/*XML 对象*/
 
-        val Link = ArrayList<String>()
         val durl = document.getElementsByTagName("durl")
         for (i in 0..durl.length - 1) {
             val element = durl.item(i) as Element
-            Link.add(element.getElementsByTagName("url").item(0).firstChild.nodeValue)
-            Video_Size += java.lang.Long.valueOf(element.getElementsByTagName("size").item(0).firstChild.nodeValue)!!
-            Video_Length += Integer.valueOf(element.getElementsByTagName("length").item(0).firstChild.nodeValue)!!
+            videoLink.add(element.getElementsByTagName("url").item(0).firstChild.nodeValue)
+            videoSize += java.lang.Long.valueOf(element.getElementsByTagName("size").item(0).firstChild.nodeValue)!!
+            videoLength += Integer.valueOf(element.getElementsByTagName("length").item(0).firstChild.nodeValue)!!
         }
-        return Link
     }
 }
