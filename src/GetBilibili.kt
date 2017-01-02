@@ -5,7 +5,10 @@ import org.apache.commons.cli.HelpFormatter
 import org.apache.commons.cli.Options
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
-import java.io.*
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
+import java.io.StringReader
 import java.lang.Character.UnicodeBlock.KATAKANA
 import java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT
 import java.lang.ProcessBuilder.Redirect
@@ -55,7 +58,7 @@ object GetBilibili {
         options.addOption("h", false, "Print a help message")
         options.addOption("delete", false, "(Default: false) Delete segmented video after completion")
         options.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion")
-        options.addOption("dir", true, "(Default: Jar dir) Specify the download/merge directory")
+        options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory")
         options.addOption("cookie", true, "(Default: null) Specify the cookie")
     }
 
@@ -121,7 +124,7 @@ object GetBilibili {
 
     private fun getCID(url: String) {
         val connection = URL(url).openConnection()
-        connection.setRequestProperty("cookie", cookie)
+        connection.setRequestProperty("Cookie", cookie)
 
         val bufferedReader = try {
             BufferedReader(InputStreamReader(GZIPInputStream(connection.inputStream), "utf-8"))
@@ -134,9 +137,9 @@ object GetBilibili {
         bufferedReader.useLines {
             it.forEach {
                 if (it.contains("<div class=\"msgbox\"><div class=\"content\"><a id='login-btn'>登录</a></div></div>")) {
-                    throw IllegalArgumentException("此为隐藏视频，需要设置 cookie。")
+                    throw IllegalArgumentException("此为隐藏视频，需要设置 Cookie。")
                 }
-                if (!x && !y) {
+                if (!x || !y) {
                     when {
                         url.contains("video") -> {
                             if (it.contains("cid=")) {
@@ -177,6 +180,7 @@ object GetBilibili {
                     }
                 }
             }
+            if (!x) throw IllegalStateException("此链接需要更新，请告知开发者！")
         }
     }
 
@@ -224,7 +228,7 @@ object GetBilibili {
         }
 
         val s = "file 'X'"
-        PrintWriter(BufferedWriter(OutputStreamWriter(Files.newOutputStream(fileList), "utf-8"))).use { paths.forEach { o -> it.println(s.replace("X", o.toString())) } }
+        Files.newBufferedWriter(fileList, charset("utf-8")).use { paths.forEach { o -> it.write(s.replace("X", o.toString()) + "\n") } }
     }
 
     private fun mergeFLV() {
@@ -315,9 +319,9 @@ object GetBilibili {
 
     private fun parseJSON(link: String) {
         val connection = URL(link).openConnection()
-        connection.setRequestProperty("cookie", cookie)
+        connection.setRequestProperty("Cookie", cookie)
 
-        BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).use {
+        connection.inputStream.bufferedReader().use {
             val jsonObject = JsonParser().parse(it).asJsonObject
             val jsonArray = jsonObject.getAsJsonArray("durl")
             jsonArray.forEach {
@@ -331,8 +335,8 @@ object GetBilibili {
 
     private fun parseXML(link: String) {
         val connection = URL(link).openConnection()
-        connection.setRequestProperty("cookie", cookie)
-        val xml: String = BufferedReader(InputStreamReader(connection.inputStream, "utf-8")).useLines {
+        connection.setRequestProperty("Cookie", cookie)
+        val xml: String = connection.inputStream.bufferedReader().useLines {
             val stringBuilder = StringBuilder()
             it.forEach { stringBuilder.append(it) }
             stringBuilder.toString()/*XML 文件*/
