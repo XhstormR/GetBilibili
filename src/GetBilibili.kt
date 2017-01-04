@@ -260,10 +260,8 @@ object GetBilibili {
         }
 
         Files.deleteIfExists(tempFile)
-
         if (isDelete) {
-            dir.toFile().listFiles().forEach { Files.deleteIfExists(it.toPath()) }
-            Files.deleteIfExists(dir)
+            dir.toFile().deleteRecursively()
         }
     }
 
