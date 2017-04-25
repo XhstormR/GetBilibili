@@ -10,7 +10,7 @@ task<Wrapper>("wrapper") {
     distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
 }
 
-task("BeforeJar") {
+task("beforeJar") {
     rootDir.resolve("build").mkdirs()
     rootDir.resolve("build").resolve("1.txt").createNewFile()
     doLast {
@@ -22,7 +22,7 @@ task("BeforeJar") {
 
 tasks.withType<Jar> {
     archiveName = project.name + archiveName
-    manifest { attributes["Main-Class"] = "GetBilibili" }
+    manifest.attributes["Main-Class"] = "GetBilibili"
     val list1: List<String> = rootDir.resolve("build").resolve("1.txt").bufferedReader().readLines()
     val list2: List<FileTree> = list1.map { zipTree(it) }
     from(list2)
