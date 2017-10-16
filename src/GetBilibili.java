@@ -1,5 +1,4 @@
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.cli.*;
@@ -37,7 +36,7 @@ public class GetBilibili {
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
     private static final String Appkey = "NmY5MGE1OWFjNThhNDEyMw==";
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
-    private static final String Cookie = "DedeUserID=1424743; DedeUserID__ckMd5=472e7fe30d4f15eb; SESSDATA=f204dbc8%2C1E88438047%2Cfe76287b; sid=9y6y864j";
+    private static final String Cookie = "DedeUserID=1426743; DedeUserID__ckMd5=477ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j";
     private static File Dir;
     private static File TempDir;
     private static String Video_Cid;
@@ -124,7 +123,6 @@ public class GetBilibili {
             System.out.println("\n" + "Done!!!");
             return;
         }
-
         HelpFormatter help = new HelpFormatter();
         help.setOptionComparator(null);
         help.printHelp(100, "GetBilibili.jar", "", options, "", true);
@@ -402,12 +400,12 @@ public class GetBilibili {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
         JsonObject jsonObject = new JsonParser().parse(bufferedReader).getAsJsonObject();
         JsonArray jsonArray = jsonObject.getAsJsonArray("durl");
-        for (JsonElement durl : jsonArray) {
+        jsonArray.forEach(durl -> {
             JsonObject durlObject = durl.getAsJsonObject();
             Link.add(durlObject.get("url").getAsString());
             Video_Size += durlObject.get("size").getAsInt();
             Video_Length += durlObject.get("length").getAsInt();
-        }
+        });
         bufferedReader.close();
         return Link;
     }
@@ -415,7 +413,6 @@ public class GetBilibili {
     private static List<String> parseXML(String link) throws IOException, ParserConfigurationException, SAXException {
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
-
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
         StringBuilder stringBuilder = new StringBuilder();
         for (String s; (s = bufferedReader.readLine()) != null; ) {
@@ -432,6 +429,8 @@ public class GetBilibili {
         for (int i = 0; i < durl.getLength(); i++) {
             Element element = (Element) durl.item(i);
             Link.add(element.getElementsByTagName("url").item(0).getFirstChild().getNodeValue());
+            Video_Size += Long.valueOf(element.getElementsByTagName("size").item(0).getFirstChild().getNodeValue());
+            Video_Length += Integer.valueOf(element.getElementsByTagName("length").item(0).getFirstChild().getNodeValue());
         }
         return Link;
     }
