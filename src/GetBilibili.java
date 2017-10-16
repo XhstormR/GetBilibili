@@ -24,8 +24,8 @@ public class GetBilibili {
     private static final String YamdiLink = "http://ww4.sinaimg.cn/large/a15b4afegw1f7vhnqa9soj203k03kwfe";
     private static final String FFmpegLink = "http://ww4.sinaimg.cn/large/a15b4afegw1f7vhtyv0wbj203k03k4qz";
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
-//    private static final String Appkey = "85eb6835b0a1034e";/*请不要滥用，且用且珍惜*/
-    private static final String Secretkey = "1c15888dc316e05a15fdd0a02ed6584f";/*请不要滥用，且用且珍惜*/
+    private static final String Appkey = "6f90a59ac58a4123";/*请不要滥用，且用且珍惜*/
+    private static final String Secretkey = "0bfd84cc3940035173f35e6777508326";/*请不要滥用，且用且珍惜*/
     private static File Dir;
     private static File TempDir;
     private static String Video_Cid;
@@ -190,7 +190,7 @@ public class GetBilibili {
 //        }
 
         /*通过 JSON 解析官方 BiliBili 获得 Link*/
-        StringBuilder SubLink = new StringBuilder().append("cid=").append(Video_Cid).append("&from=miniplay&otype=json&player=1&quality=3&type=flv");
+        StringBuilder SubLink = new StringBuilder().append("appkey=").append(Appkey).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
         String Sign = Hash(SubLink + Secretkey, "MD5");
         Link = Json("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
     }
