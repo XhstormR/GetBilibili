@@ -3,7 +3,7 @@
     <output-path>$PROJECT_DIR$/out/artifacts/GetBilibili_jar</output-path>
     <root id="archive" name="GetBilibili.jar">
       <element id="module-output" name="GetBilibili" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/libs/jsoup-1.9.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/gson-2.7.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>
