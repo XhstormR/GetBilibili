@@ -34,7 +34,7 @@ public class GetBilibili {
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
     private static final String Appkey = "NmY5MGE1OWFjNThhNDEyMw==";
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
-    private static final String Cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=ayhy6i1s";
+    private static final String Cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=9yly305j";
     private static File Dir;
     private static File TempDir;
     private static String Video_Cid;
