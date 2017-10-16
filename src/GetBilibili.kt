@@ -35,11 +35,11 @@ object GetBilibili {
     private val SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe"
     private val Appkey = "NmY5MGE1OWFjNThhNDEyMw=="
     private val Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY="
-    private val parse: CommandLine  by lazy { DefaultParser().parse(options, args) }
     private val dir: Path by lazy { if (parse.getOptionValue("dir") != null) Paths.get(parse.getOptionValue("dir"), "GetBilibili") else URLDecoder.decode(GetBilibili::class.java.protectionDomain.codeSource.location.path, "utf-8")!!.let { Paths.get(it.substring(1, it.lastIndexOf('/') + 1), "GetBilibili") } }
     private val cookie: String by lazy { parse.getOptionValue("cookie") ?: "" }//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
     private val isDelete: Boolean by lazy { parse.hasOption("delete") }
     private val isConvert: Boolean by lazy { parse.hasOption("convert") }
+    private val parse: CommandLine  by lazy { DefaultParser().parse(options, args) }
     private val videoLink = ArrayList<String>()
     private val tasks = HashSet<Process>()
     private val tempDir = Paths.get(System.getenv("APPDATA"), "GetBilibili")
@@ -321,15 +321,19 @@ object GetBilibili {
         val connection = URL(link).openConnection()
         connection.setRequestProperty("Cookie", cookie)
 
-        connection.inputStream.bufferedReader().use {
-            val jsonObject = JsonParser().parse(it).asJsonObject
-            val jsonArray = jsonObject.getAsJsonArray("durl")
-            jsonArray.forEach {
-                val durlObject = it.asJsonObject
-                videoLink.add(durlObject.get("url").asString)
-                videoSize += durlObject.get("size").asInt.toLong()
-                videoLength += durlObject.get("length").asInt
+        try {
+            connection.inputStream.bufferedReader().use {
+                val jsonObject = JsonParser().parse(it).asJsonObject
+                val jsonArray = jsonObject.getAsJsonArray("durl")
+                jsonArray.forEach {
+                    val durlObject = it.asJsonObject
+                    videoLink.add(durlObject.get("url").asString)
+                    videoSize += durlObject.get("size").asInt.toLong()
+                    videoLength += durlObject.get("length").asInt
+                }
             }
+        } catch (e: NullPointerException) {
+            throw IllegalStateException("KEY 已经失效啦！好难找的伐！")
         }
     }
 
