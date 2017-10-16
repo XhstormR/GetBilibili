@@ -191,9 +191,9 @@ public class GetBilibili {
                     x = 1;
                     int i = s.lastIndexOf("</a>");
                     String aid = s.substring(s.lastIndexOf('>', i) + 3, i);
-                    BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8"));
-                    Video_Cid = new JsonParser().parse(bufferedReader2).getAsJsonArray().get(0).getAsJsonObject().get("cid").getAsString();
-                    bufferedReader2.close();
+                    try (BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8"))) {
+                        Video_Cid = new JsonParser().parse(bufferedReader2).getAsJsonArray().get(0).getAsJsonObject().get("cid").getAsString();
+                    }
                 }
                 if (s.contains("<h1 title=")) {
                     y = 1;
@@ -226,12 +226,12 @@ public class GetBilibili {
 
     private static void saveLink() throws IOException {
         File link = new File(TempDir, "1.txt");
-        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(link, false), "utf-8"));
-        for (String s : Link) {
-            bufferedWriter.write(s);
-            bufferedWriter.newLine();
+        try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(link, false), "utf-8"))) {
+            for (String s : Link) {
+                bufferedWriter.write(s);
+                bufferedWriter.newLine();
+            }
         }
-        bufferedWriter.close();
         if (link.exists()) {
             link.deleteOnExit();
         }
@@ -246,7 +246,6 @@ public class GetBilibili {
 
     private static void listFile() throws IOException {
         File fileList = new File(TempDir, "2.txt");
-        BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileList, false), "utf-8"));
         File[] files = Dir.listFiles((dir, name) -> name.endsWith(".flv") || name.endsWith(".mp4"));
 
         if (files != null) {
@@ -264,13 +263,14 @@ public class GetBilibili {
                 Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
                 return i1.compareTo(i2);
             });
-            for (File file : files) {
-                String path = file.getAbsolutePath();
-                bufferedWriter.write(new StringBuilder("file ''").insert(6, path).toString());
-                bufferedWriter.newLine();
+            try (BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileList, false), "utf-8"))) {
+                for (File file : files) {
+                    String path = file.getAbsolutePath();
+                    bufferedWriter.write(new StringBuilder("file ''").insert(6, path).toString());
+                    bufferedWriter.newLine();
+                }
             }
         }
-        bufferedWriter.close();
         if (fileList.exists()) {
             fileList.deleteOnExit();
         }
@@ -350,16 +350,14 @@ public class GetBilibili {
         String path = url.getFile();
         File file = new File(TempDir, path.substring(path.lastIndexOf('/') + 1));
 
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream(), 32 * 1024);
-        BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, false), 32 * 1024);
-        byte[] bytes = new byte[32 * 1024];
-
-        for (int read; (read = bufferedInputStream.read(bytes)) != -1; ) {
-            bufferedOutputStream.write(bytes, 0, read);
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(connection.getInputStream(), 32 * 1024);
+             BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, false), 32 * 1024)) {
+            byte[] bytes = new byte[32 * 1024];
+            for (int read; (read = bufferedInputStream.read(bytes)) != -1; ) {
+                bufferedOutputStream.write(bytes, 0, read);
+            }
         }
 
-        bufferedInputStream.close();
-        bufferedOutputStream.close();
         return file;
     }
 
@@ -377,15 +375,15 @@ public class GetBilibili {
                 }
             }
         }).start();
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"));
-        for (String s; (s = bufferedReader.readLine()) != null; ) {
-            if (show) {
-                System.out.println(s);
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"))) {
+            for (String s; (s = bufferedReader.readLine()) != null; ) {
+                if (show) {
+                    System.out.println(s);
+                }
             }
         }
         process.waitFor();
         Tasks.remove(process);
-        bufferedReader.close();
     }
 
     private static String hash(String str, String algorithm) throws NoSuchAlgorithmException {
@@ -405,29 +403,30 @@ public class GetBilibili {
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
-        JsonObject jsonObject = new JsonParser().parse(bufferedReader).getAsJsonObject();
-        JsonArray jsonArray = jsonObject.getAsJsonArray("durl");
-        jsonArray.forEach(durl -> {
-            JsonObject durlObject = durl.getAsJsonObject();
-            Link.add(durlObject.get("url").getAsString());
-            Video_Size += durlObject.get("size").getAsInt();
-            Video_Length += durlObject.get("length").getAsInt();
-        });
-        bufferedReader.close();
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+            JsonObject jsonObject = new JsonParser().parse(bufferedReader).getAsJsonObject();
+            JsonArray jsonArray = jsonObject.getAsJsonArray("durl");
+            jsonArray.forEach(durl -> {
+                JsonObject durlObject = durl.getAsJsonObject();
+                Link.add(durlObject.get("url").getAsString());
+                Video_Size += durlObject.get("size").getAsInt();
+                Video_Length += durlObject.get("length").getAsInt();
+            });
+        }
         return Link;
     }
 
     private static List<String> parseXML(String link) throws IOException, ParserConfigurationException, SAXException {
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String s; (s = bufferedReader.readLine()) != null; ) {
-            stringBuilder.append(s);
+        String xml;
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+            StringBuilder stringBuilder = new StringBuilder();
+            for (String s; (s = bufferedReader.readLine()) != null; ) {
+                stringBuilder.append(s);
+            }
+            xml = stringBuilder.toString();/*XML 文件*/
         }
-        bufferedReader.close();
-        String xml = stringBuilder.toString();/*XML 文件*/
 
         DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
         Document document = documentBuilder.parse(new InputSource(new StringReader(xml)));/*XML 对象*/
