@@ -2,8 +2,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import sun.misc.BASE64Decoder;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -48,7 +56,7 @@ public class GetBilibili {
         });
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
         String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
         Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
         if (!Dir.exists()) {
@@ -110,6 +118,20 @@ public class GetBilibili {
                 listFile();
                 mergeFLV();
                 break;
+            case "-j":
+                Link = Json(args[1]);
+                saveLink();
+                downLoad();
+                listFile();
+                mergeFLV();
+                break;
+            case "-x":
+                Link = XML(args[1]);
+                saveLink();
+                downLoad();
+                listFile();
+                mergeFLV();
+                break;
             default:
                 System.out.println("Error!!!");
                 return;
@@ -164,7 +186,7 @@ public class GetBilibili {
                 bufferedReader.close();
             }
         }
-        String cookie = "DedeUserID=1824443; SESSDATA=f201dba8%2C1475662871%2C2a00cb50";
+        String cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=ayhy6i1s";
         URLConnection connection = new URL(url).openConnection();
         connection.setRequestProperty("Cookie", cookie);
 
@@ -410,6 +432,29 @@ public class GetBilibili {
             Video_Length += durlObject.get("length").getAsInt();
         }
         bufferedReader.close();
+        return Link;
+    }
+
+    private static List<String> XML(String link) throws IOException, ParserConfigurationException, SAXException {
+        String cookie = "DedeUserID=1824443; DedeUserID__ckMd5=964e77b30a9d67eb; SESSDATA=f201dba8%2C1478438047%2Cfe73581b; sid=ayhy6i1s";
+        URLConnection connection = new URL(link).openConnection();
+        connection.setRequestProperty("Cookie", cookie);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
+        StringBuilder stringBuilder = new StringBuilder();
+        for (String s; (s = bufferedReader.readLine()) != null; ) {
+            stringBuilder.append(s);
+        }
+        String XML = stringBuilder.toString();//
+
+        DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document document = documentBuilder.parse(new InputSource(new StringReader(XML)));//
+
+        List<String> Link = new ArrayList<>();
+        NodeList durl = document.getElementsByTagName("durl");
+        for (int i = 0; i < durl.getLength(); i++) {
+            Element element = (Element) durl.item(i);
+            Link.add(element.getElementsByTagName("url").item(0).getFirstChild().getNodeValue());
+        }
         return Link;
     }
 }
