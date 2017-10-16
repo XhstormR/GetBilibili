@@ -22,7 +22,7 @@ task("beforeJar") {
 
 tasks.withType<Jar> {
     archiveName = project.name + archiveName
-    manifest.attributes["Main-Class"] = "GetBilibili"
+    manifest.attributes["Main-Class"] = "MainKt"
     val list1: List<String> = rootDir.resolve("build").resolve("1.txt").bufferedReader().readLines()
     val list2: List<FileTree> = list1.map { zipTree(it) }
     from(list2)
@@ -65,6 +65,7 @@ repositories {
 dependencies {
     compile("org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version")
     compile("com.google.code.gson:gson:+")
-    compile("org.jsoup:jsoup:+")
     compile("commons-cli:commons-cli:+")
+    compile("org.springframework:spring-context:+")
+    compile("org.springframework:spring-aspects:+")
 }
