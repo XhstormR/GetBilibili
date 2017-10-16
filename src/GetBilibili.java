@@ -225,7 +225,7 @@ public class GetBilibili {
 
         /*方案二*/
         File tempFLV = new File(Dir.getParent(), "123.flv");
-        String replaceTitleString = Video_Title != null ? Video_Title.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('‧', ' ') : null;
+        String replaceTitleString = Video_Title != null ? Video_Title.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('‧', ' ').replace('•', ' ') : null;
         String finalFilePath = Dir.getParent() + "\\" + (Video_Title != null ? replaceTitleString : "Video") + (Convert ? ".mp4" : ".flv");
 
         System.out.println("\n" + "Merging...");
