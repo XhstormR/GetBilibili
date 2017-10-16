@@ -134,22 +134,19 @@ public class GetBilibili {
     }
 
     private static void createDirectory(CommandLine parse) throws IOException {
-        String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
-        Dir = Paths.get(path.substring(1, path.lastIndexOf('/') + 1), "GetBilibili");
-        if (Files.notExists(Dir)) {
-            Files.createDirectories(Dir);
-        }
         String tempPath = System.getenv("APPDATA");
         TempDir = Paths.get(tempPath, "GetBilibili");
+        if (parse.getOptionValue("dir") != null) {
+            Dir = Paths.get(parse.getOptionValue("dir"), "GetBilibili");
+        } else {
+            String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
+            Dir = Paths.get(path.substring(1, path.lastIndexOf('/') + 1), "GetBilibili");
+        }
         if (Files.notExists(TempDir)) {
             Files.createDirectories(TempDir);
         }
-        if (parse.getOptionValue("dir") != null) {
-            Files.deleteIfExists(Dir);
-            Dir = Paths.get(parse.getOptionValue("dir"), "GetBilibili");
-            if (Files.notExists(Dir)) {
-                Files.createDirectories(Dir);
-            }
+        if (Files.notExists(Dir)) {
+            Files.createDirectories(Dir);
         }
     }
 
@@ -234,20 +231,20 @@ public class GetBilibili {
     }
 
     private static void saveLink() throws IOException {
-        Path link = Paths.get(TempDir.toString(), "1.txt");
+        Path link = TempDir.resolve("1.txt");
         link.toFile().deleteOnExit();
         Files.write(link, Link, Charset.forName("utf-8"));
     }
 
     private static void downLoad() throws IOException, InterruptedException {
-        if (Files.notExists(Paths.get(TempDir.toString(), "aria2c.exe"))) {
+        if (Files.notExists(TempDir.resolve("aria2c.exe"))) {
             getEXE(Aria2Link);
         }
         execute(TempDir.toString() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
     }
 
     private static void listFile() throws IOException {
-        Path fileList = Paths.get(TempDir.toString(), "2.txt");
+        Path fileList = TempDir.resolve("2.txt");
         fileList.toFile().deleteOnExit();
 
         List<Path> paths = new ArrayList<>();
@@ -274,17 +271,17 @@ public class GetBilibili {
     }
 
     private static void mergeFLV() throws IOException, InterruptedException {
-        Path tempFLV = Paths.get(Dir.getParent().toString(), "123.flv");
-        String finalFilePath = Dir.getParent() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
+        Path tempFLV = Dir.getParent().resolve("123.flv");
+        String finalFilePath = Dir.getParent().toString() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
 
         if (Link != null && Link.size() == 1) {
             String s = Link.get(0);
             int i = s.indexOf('?');
             String name = s.substring(s.lastIndexOf('/', i) + 1, i);
-            Files.move(Paths.get(Dir.toString(), name), Paths.get(Dir.getParent().toString(), getFileName() + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING);//移动文件至上层目录
+            Files.move(Dir.resolve(name), Dir.getParent().resolve(getFileName() + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING);//移动文件至上层目录
         } else {
             System.out.println("\n" + "Merging...");
-            if (Files.notExists(Paths.get(TempDir.toString(), "ffmpeg.exe"))) {
+            if (Files.notExists(TempDir.resolve("ffmpeg.exe"))) {
                 getEXE(FFmpegLink);
             }
             execute(TempDir.toString() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", "-y", tempFLV.toString());
@@ -294,7 +291,7 @@ public class GetBilibili {
                 execute(TempDir.toString() + "/ffmpeg.exe", "-i", tempFLV.toString(), "-c", "copy", "-y", finalFilePath);
             } else {
                 System.out.println("\n" + "Merging...");
-                if (Files.notExists(Paths.get(TempDir.toString(), "yamdi.exe"))) {
+                if (Files.notExists(TempDir.resolve("yamdi.exe"))) {
                     getEXE(YamdiLink);
                 }
                 execute(TempDir.toString() + "/yamdi.exe", "-i", tempFLV.toString(), "-o", finalFilePath);
@@ -329,7 +326,7 @@ public class GetBilibili {
     }
 
     private static void getEXE(String link) throws IOException, InterruptedException {
-        if (Files.notExists(Paths.get(TempDir.toString(), "7zr.exe"))) {
+        if (Files.notExists(TempDir.resolve("7zr.exe"))) {
             getFile(SevenZipLink);
         }
         getFile(link);
@@ -339,7 +336,7 @@ public class GetBilibili {
     private static void getFile(String link) throws IOException {
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("User-Agent", UserAgent);
-        Path path = Paths.get(TempDir.toString(), link.substring(link.lastIndexOf('/') + 1));
+        Path path = TempDir.resolve(link.substring(link.lastIndexOf('/') + 1));
         path.toFile().deleteOnExit();
 
         try (InputStream inputStream = connection.getInputStream()) {
