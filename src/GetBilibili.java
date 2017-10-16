@@ -58,10 +58,11 @@ public class GetBilibili {
                 getCID(args[1]);
                 getLink();
                 DecimalFormat sizeFormat = new DecimalFormat("0.00");
+                DecimalFormat numFormat = new DecimalFormat("0,000");
                 DecimalFormat timeFormat = new DecimalFormat("00");
                 int s = Video_Length / 1000;
                 System.out.println("Title: " + Video_Title);
-                System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB\t" + "Total Time: " + timeFormat.format(s / 60) + ":" + timeFormat.format(s % 60) + " Mins\n");
+                System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB (" + numFormat.format(Video_Size) + " bytes)\t" + "Total Time: " + timeFormat.format(s / 60) + ":" + timeFormat.format(s % 60) + " Mins\n ");
                 Link.forEach(System.out::println);
                 break;
             case "-m":
