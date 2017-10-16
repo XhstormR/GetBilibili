@@ -8,6 +8,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -24,7 +25,10 @@ public class GetBilibili {
     private static final String Secretkey = "2ad42749773c441109bdc0191257a664";/*请不要滥用，且用且珍惜*/
     private static File Dir;
     private static File TempDir;
-    private static String Cid;
+    private static String Video_Cid;
+    private static String Video_Title;
+    private static int Video_Size;
+    private static int Video_Length;
     private static List<String> Link;
     private static boolean Delete = true;
 
@@ -48,6 +52,11 @@ public class GetBilibili {
             case "-l":
                 getCID(args[1]);
                 getLink();
+                DecimalFormat sizeFormat = new DecimalFormat("0.00");
+                DecimalFormat numFormt = new DecimalFormat("00");
+                int s = Video_Length / 1000;
+                System.out.println("Title: " + Video_Title);
+                System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB\t" + "Video Time: " + numFormt.format(s / 60) + ":" + numFormt.format(s % 60) + " Mins\n");
                 Link.forEach(System.out::println);
                 break;
             case "-m":
@@ -71,31 +80,39 @@ public class GetBilibili {
     }
 
     private static void getCID(String url) throws IOException {
-        /*Jsoup 解析页面获得 Cid*/
+        /*Jsoup 解析页面获得 Video_Cid*/
 //        Document doc = Jsoup.connect(url).userAgent(UserAgent).get();
 //        Element player = doc.getElementsByClass("scontent").select("script").get(0);
 //        String data = player.data();
-//        Cid = data.substring(data.indexOf("cid") + 4, data.indexOf('&'));
+//        Video_Cid = data.substring(data.indexOf("cid") + 4, data.indexOf('&'));
 
-        /*原生解析页面获得 Cid*/
+        /*原生解析页面获得 Video_Cid*/
 //        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL(url).openStream()), "utf-8"));
 //        Scanner scanner = new Scanner(bufferedReader);
 //        for (String s; scanner.hasNextLine(); ) {
 //            s = scanner.nextLine();
 //            if (s.contains("cid=")) {
 //                bufferedReader.close();
-//                Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
+//                Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
 //                break;
 //            }
 //        }
 //        bufferedReader.close();
 
-        /*原生解析页面获得 Cid*/
+        /*原生解析页面获得 Video_Cid 和 Video_Title*/
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL(url).openStream()), "utf-8"));
+        int x = 0, y = 0;
         for (String s; (s = bufferedReader.readLine()) != null; ) {
             if (s.contains("cid=")) {
-                bufferedReader.close();
-                Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
+                x = 1;
+                Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
+            }
+            if (s.contains("<h1 title=")) {
+                y = 1;
+                int i = s.lastIndexOf("</h1>");
+                Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i);
+            }
+            if (x == 1 && y == 1) {
                 break;
             }
         }
@@ -104,7 +121,7 @@ public class GetBilibili {
 
     private static void getLink() throws IOException, NoSuchAlgorithmException {
         /*通过 Jsoup 解析第三方 BiliBiliJJ 获得 Link*/
-//        String url = "http://www.bilibilijj.com/DownLoad/Cid/" + Cid;
+//        String url = "http://www.bilibilijj.com/DownLoad/Cid/" + Video_Cid;
 //        Document doc = Jsoup.connect(url).userAgent(UserAgent).get();
 //        Link = new ArrayList<>();
 //        if (doc.baseUri().contains("DownLoad")) {
@@ -117,7 +134,7 @@ public class GetBilibili {
 //        }
 
         /*通过 JSON 解析官方 BiliBili 获得 Link*/
-        StringBuilder SubLink = new StringBuilder().append("appkey=").append(Appkey).append("&cid=").append(Cid).append("&otype=json&quality=3&type=flv");
+        StringBuilder SubLink = new StringBuilder().append("appkey=").append(Appkey).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
         String Sign = Hash(SubLink + Secretkey, "MD5");
         Link = Json("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
     }
@@ -197,7 +214,8 @@ public class GetBilibili {
         if (!new File(TempDir, "yamdi.exe").exists()) {
             getEXE(YamdiLink);
         }
-        execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", Dir.getParent() + "/" + (Cid != null ? Cid : "Video") + ".flv");
+        String replaceTitleString = Video_Title.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ');
+        execute(true, TempDir.getAbsolutePath() + "/yamdi.exe", "-i", tempFLV.getAbsolutePath(), "-o", Dir.getParent() + "\\" + (Video_Title != null ? replaceTitleString : "Video") + ".flv");
 
         if (tempFLV.exists()) {
             tempFLV.deleteOnExit();
@@ -291,7 +309,10 @@ public class GetBilibili {
         JsonObject jsonObject = new JsonParser().parse(bufferedReader).getAsJsonObject();
         JsonArray jsonArray = jsonObject.getAsJsonArray("durl");
         for (JsonElement durl : jsonArray) {
-            Link.add(durl.getAsJsonObject().get("url").getAsString());
+            JsonObject durlObject = durl.getAsJsonObject();
+            Link.add(durlObject.get("url").getAsString());
+            Video_Size += durlObject.get("size").getAsInt();
+            Video_Length += durlObject.get("length").getAsInt();
         }
         bufferedReader.close();
         return Link;
