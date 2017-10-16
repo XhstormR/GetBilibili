@@ -37,12 +37,12 @@ public class GetBilibili {
         String path = GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
         if (!Dir.exists()) {
-            Dir.mkdir();
+            Dir.mkdirs();
         }
         String tempPath = System.getenv("APPDATA");
         TempDir = new File(tempPath, "GetBilibili");
         if (!TempDir.exists()) {
-            TempDir.mkdir();
+            TempDir.mkdirs();
         }
 
         System.out.println();
@@ -78,8 +78,13 @@ public class GetBilibili {
                     return;
                 }
                 getCID(args[1]);
-                if (args.length > 2) {
+                if (args.length > 3) {
                     Convert = args[2].equals("1");
+                    Dir.delete();
+                    Dir = new File(args[3], "GetBilibili");
+                    if (!Dir.exists()) {
+                        Dir.mkdirs();
+                    }
                 }
                 getLink();
                 saveLink();
