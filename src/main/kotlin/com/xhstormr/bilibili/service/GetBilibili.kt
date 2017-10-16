@@ -1,4 +1,4 @@
-package service
+package com.xhstormr.bilibili.service
 
 import com.google.gson.JsonParser
 import org.apache.commons.cli.CommandLine
@@ -39,7 +39,7 @@ open class GetBilibili {
         this.addOption("l", true, "Get bilibili ultra-definition video link")
         this.addOption("d", true, "Download bilibili ultra-definition video")
         this.addOption("m", false, "Merge segmented video")
-        this.addOption("h", false, "Print a help message")
+        this.addOption("h", false, "Print usage information")
         this.addOption("cookie", false, "(Default: false) Specify the cookie in cookie.txt")
         this.addOption("delete", false, "(Default: false) Delete segmented video after completion")
         this.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion")
@@ -118,7 +118,7 @@ open class GetBilibili {
         val s = videoLength / 1000//秒
         val m = s / 60//分
         val h = m / 60//时
-        println("Title: ${getFileName() + if (isConvert) ".mp4" else ".flv"}")
+        videoTitle?.let { println("Title: ${getFileName() + if (isConvert) ".mp4" else ".flv"}") }
         System.out.printf("Total Size: %s MB (%s bytes)\tTotal Time: %s:%s:%s (%s:%s Mins)\n\n", sizeFormat.format(videoSize / (1024 * 1024.0)), numFormat.format(videoSize), timeFormat.format(h.toLong()), timeFormat.format((m % 60).toLong()), timeFormat.format((s % 60).toLong()), timeFormat.format(m.toLong()), timeFormat.format((s % 60).toLong()))
         videoLink.forEach(::println)
     }
@@ -208,7 +208,7 @@ open class GetBilibili {
         val document = documentBuilder.parse(InputSource(StringReader(xml)))/*XML 对象*/
 
         val durl = document.getElementsByTagName("durl")
-        for (i in 0..durl.length - 1) {
+        for (i in 0 until durl.length) {
             val element = durl.item(i) as Element
             videoLink.add(element.getElementsByTagName("url").item(0).firstChild.nodeValue)
             videoSize += java.lang.Long.valueOf(element.getElementsByTagName("size").item(0).firstChild.nodeValue)!!

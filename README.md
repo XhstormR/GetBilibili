@@ -1,7 +1,7 @@
 # GetBilibili
 ![](http://ww4.sinaimg.cn/large/a15b4afegw1f80cg69rtpg20sp0ehte3 "GetBilibili")
 
-[Download1](https://raw.githubusercontent.com/XhstormR/GetBilibili/master/GetBilibili.jar "GetBilibili"),[Download2](https://github.com/XhstormR/GetBilibili/releases/latest "GetBilibili")
+[Download](https://github.com/XhstormR/GetBilibili/releases/latest "GetBilibili")
 
 ## Link
 Get Bilibili Ultra-Definition Video Link

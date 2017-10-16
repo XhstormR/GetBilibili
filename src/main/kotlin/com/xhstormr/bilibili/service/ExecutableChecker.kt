@@ -1,4 +1,4 @@
-package service
+package com.xhstormr.bilibili.service
 
 import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Before
@@ -24,7 +24,7 @@ open class ExecutableChecker {
     @Autowired
     private lateinit var executorService: ExecutorService
 
-    @Pointcut("execution(* service.ExecutorService.execute(..)) && args(args)")
+    @Pointcut("execution(* com.xhstormr.bilibili.service.ExecutorService.execute(..)) && args(args)")
     private fun executed(args: MutableList<String>) {
     }
 
