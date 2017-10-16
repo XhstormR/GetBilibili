@@ -11,10 +11,7 @@ import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -33,11 +30,23 @@ public class GetBilibili {
     private static File TempDir;
     private static String Video_Cid;
     private static String Video_Title;
-    private static int Video_Size;
+    private static long Video_Size;
     private static int Video_Length;
     private static List<String> Link;
     private static boolean Delete = true;
     private static boolean Convert = false;
+    private static Set<Process> Tasks = new HashSet<>();
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                for (Process process : Tasks) {
+                    process.destroyForcibly();
+                }
+            }
+        });
+    }
 
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
         String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
@@ -349,6 +358,7 @@ public class GetBilibili {
 
     private static void execute(boolean show, String... command) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(command).directory(TempDir).redirectErrorStream(true).start();
+        Tasks.add(process);
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"));
         for (String s; (s = bufferedReader.readLine()) != null; ) {
             if (show) {
@@ -356,6 +366,7 @@ public class GetBilibili {
             }
         }
         process.waitFor();
+        Tasks.remove(process);
         bufferedReader.close();
     }
 
