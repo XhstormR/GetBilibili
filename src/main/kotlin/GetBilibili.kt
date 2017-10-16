@@ -46,9 +46,9 @@ object GetBilibili {
     private val options = Options()
     private var videoSize = 0L
     private var videoLength = 0
-    private var videoCid: String? = null
     private var videoTitle: String? = null
-    private var args: Array<String>? = null
+    private lateinit var videoCid: String
+    private lateinit var args: Array<String>
 
     init {
         Runtime.getRuntime().addShutdownHook(Thread { tasks.forEach { it.destroyForcibly() } })
@@ -219,7 +219,7 @@ object GetBilibili {
         val fileList = tempDir.resolve("2.txt")
         fileList.toFile().deleteOnExit()
 
-        val paths: List<File> = dir.toFile().listFiles { dir, name -> name.endsWith(".flv") || name.endsWith(".mp4") }.sortedBy {
+        val paths: List<File> = dir.toFile().listFiles { _, name -> name.endsWith(".flv") || name.endsWith(".mp4") }.sortedBy {
             val name1 = it.name
             val s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."))
             val pattern = Pattern.compile("\\d+")
