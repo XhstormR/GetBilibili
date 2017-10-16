@@ -6,21 +6,21 @@
 ## Link
 Get Bilibili Ultra-Definition Video Link
 ```bash
-支持原视频链接、JSON 和 XML
+支持原视频链接、XML 和 JSON
 
 GetBilibili.jar -l http://www.bilibili.com/video/av6896579/
-GetBilibili.jar -l "https://interface.bilibili.com/playurl?cid=11239800&appkey=84956560bc028eb7&otype=json&type=flv&quality=3&sign=c639a8283b4180cf0c3d553de3387309"
 GetBilibili.jar -l "https://interface.bilibili.com/playurl?cid=11239800&ts=1477907912&player=1&sign=d47cc63f6ca756e3d9b806b7068df18b"
+GetBilibili.jar -l "https://interface.bilibili.com/playurl?cid=11239800&appkey=84956560bc028eb7&otype=json&type=flv&quality=3&sign=c639a8283b4180cf0c3d553de3387309"
 ```
 
 ## Download
 Download Bilibili Ultra-Definition Video
 ```bash
-支持原视频链接、JSON 和 XML
+支持原视频链接、XML 和 JSON
 
 GetBilibili.jar -d http://www.bilibili.com/video/av6896579/
-GetBilibili.jar -d "https://interface.bilibili.com/playurl?cid=11239800&appkey=84956560bc028eb7&otype=json&type=flv&quality=3&sign=c639a8283b4180cf0c3d553de3387309"
 GetBilibili.jar -d "https://interface.bilibili.com/playurl?cid=11239800&ts=1477907912&player=1&sign=d47cc63f6ca756e3d9b806b7068df18b"
+GetBilibili.jar -d "https://interface.bilibili.com/playurl?cid=11239800&appkey=84956560bc028eb7&otype=json&type=flv&quality=3&sign=c639a8283b4180cf0c3d553de3387309"
 ```
 
 ## Merge
