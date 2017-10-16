@@ -280,7 +280,7 @@ public class GetBilibili {
         File tempFLV = new File(Dir.getParent(), "123.flv");
         String finalFilePath = Dir.getParent() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
 
-        if (Link.size() == 1) {
+        if (Link != null && Link.size() == 1) {
             String s = Link.get(0);
             int i = s.indexOf('?');
             String name = s.substring(s.lastIndexOf('/', i) + 1, i);
