@@ -80,10 +80,12 @@ public class GetBilibili {
                 getCID(args[1]);
                 if (args.length > 3) {
                     Convert = args[2].equals("1");
-                    Dir.delete();
-                    Dir = new File(args[3], "GetBilibili");
-                    if (!Dir.exists()) {
-                        Dir.mkdirs();
+                    if (!args[3].equals("0")) {
+                        Dir.delete();
+                        Dir = new File(args[3], "GetBilibili");
+                        if (!Dir.exists()) {
+                            Dir.mkdirs();
+                        }
                     }
                 }
                 getLink();
