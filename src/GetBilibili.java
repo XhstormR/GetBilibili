@@ -57,8 +57,6 @@ public class GetBilibili {
         Options options = new Options();
         options.addOption("l", true, "Get bilibili ultra-definition video link");
         options.addOption("d", true, "Download bilibili ultra-definition video");
-        options.addOption("j", true, "Download bilibili ultra-definition video via json");
-        options.addOption("x", true, "Download bilibili ultra-definition video via xml");
         options.addOption("m", false, "Merge segmented video");
         options.addOption("delete", false, "(Default: false) Delete segmented video after completion");
         options.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion");
@@ -71,7 +69,7 @@ public class GetBilibili {
             System.out.println(e.getMessage() + "\n");
             HelpFormatter help = new HelpFormatter();
             help.setOptionComparator(null);
-            help.printHelp(120, "GetBilibili.jar", "", options, "", true);
+            help.printHelp(100, "GetBilibili.jar", "", options, "", true);
             return;
         }
 
@@ -80,43 +78,14 @@ public class GetBilibili {
 
         if (parse.getOptionValue('l') != null) {
             String url = parse.getOptionValue('l');
-            if (url.contains("playurl") && url.contains("json")) {
-                Link = parseJSON(url);
-                showLink();
-            } else if (url.contains("playurl")) {
-                Link = parseXML(url);
-                showLink();
-            } else {
-                getCID(url);
-                getLink();
-                showLink();
-            }
+            generateLink(url);
+            showLink();
             System.out.println("\n" + "Done!");
             return;
         }
         if (parse.getOptionValue('d') != null) {
-            createDirectory(parse);
-            getCID(parse.getOptionValue('d'));
-            getLink();
-            saveLink();
-            downLoad();
-            listFile();
-            mergeFLV();
-            System.out.println("\n" + "Done!");
-            return;
-        }
-        if (parse.getOptionValue('j') != null) {
-            Link = parseJSON(parse.getOptionValue('j'));
-            createDirectory(parse);
-            saveLink();
-            downLoad();
-            listFile();
-            mergeFLV();
-            System.out.println("\n" + "Done!");
-            return;
-        }
-        if (parse.getOptionValue('x') != null) {
-            Link = parseXML(parse.getOptionValue('x'));
+            String url = parse.getOptionValue('d');
+            generateLink(url);
             createDirectory(parse);
             saveLink();
             downLoad();
@@ -134,7 +103,18 @@ public class GetBilibili {
         }
         HelpFormatter help = new HelpFormatter();
         help.setOptionComparator(null);
-        help.printHelp(120, "GetBilibili.jar", "", options, "", true);
+        help.printHelp(100, "GetBilibili.jar", "", options, "", true);
+    }
+
+    private static void generateLink(String url) throws IOException, ParserConfigurationException, SAXException, NoSuchAlgorithmException {
+        if (url.contains("playurl") && url.contains("json")) {
+            Link = parseJSON(url);
+        } else if (url.contains("playurl")) {
+            Link = parseXML(url);
+        } else {
+            getCID(url);
+            getLink();
+        }
     }
 
     private static void createDirectory(CommandLine parse) throws UnsupportedEncodingException {
@@ -378,6 +358,17 @@ public class GetBilibili {
     private static void execute(boolean show, String... command) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(command).directory(TempDir).redirectErrorStream(true).start();
         Tasks.add(process);
+        new Thread(() -> {
+            PrintWriter printWriter = new PrintWriter(process.getOutputStream(), true);
+            for (; process.isAlive(); ) {
+                printWriter.println('y');
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "gbk"));
         for (String s; (s = bufferedReader.readLine()) != null; ) {
             if (show) {
