@@ -28,6 +28,8 @@ GetBilibili.jar -m     合并后删除源文件，保留为原格式（默认）
 ## Reference
 https://www.v2ex.com/t/307373
 
+JRE：https://pan.baidu.com/s/1i5nt6AT 密码：nubs
+
 ## TODO
 - [x] 显示视频的标题、大小和时间
 - [x] 保存文件名为视频标题
