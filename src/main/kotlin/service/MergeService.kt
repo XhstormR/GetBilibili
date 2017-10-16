@@ -15,25 +15,25 @@ open class MergeService {
             "concat",
             "-safe",
             "-1",
+            "-i",
+            "2.txt",
             "-c",
             "copy",
-            "-y",
-            "-i",
-            "2.txt"
+            "-y"
     )
     private val args2 = arrayListOf(
             "ffmpeg.exe",
+            "-i",
+            "|2|",
             "-c",
             "copy",
-            "-y",
-            "-i"
+            "-y"
     )
     private val args3 = arrayListOf(
             "yamdi.exe",
             "-i",
             "|2|",
-            "-o",
-            "|4|"
+            "-o"
     )
 
     fun start(tempFile: Path, finalFile: Path, convert: Boolean) {
@@ -45,14 +45,14 @@ open class MergeService {
         if (convert) {
             println("\nConverting...")
             executorService.execute(args2.apply {
-                this.add(tempFile.toString())
+                this[2] = tempFile.toString()
                 this.add(finalFile.toString())
             })
         } else {
             println("\nMerging...")
             executorService.execute(args3.apply {
                 this[2] = tempFile.toString()
-                this[4] = finalFile.toString()
+                this.add(finalFile.toString())
             })
         }
     }
