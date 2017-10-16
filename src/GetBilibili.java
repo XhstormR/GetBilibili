@@ -86,14 +86,6 @@ public class GetBilibili {
             System.out.println("\n" + "Done!!!");
             return;
         }
-
-        if (parse.hasOption('m')) {
-            createDirectory(parse);
-            listFile();
-            mergeFLV();
-            System.out.println("\n" + "Done!!!");
-            return;
-        }
         if (parse.getOptionValue('d') != null) {
             createDirectory(parse);
             getCID(parse.getOptionValue('d'));
@@ -125,6 +117,14 @@ public class GetBilibili {
             System.out.println("\n" + "Done!!!");
             return;
         }
+        if (parse.hasOption('m')) {
+            createDirectory(parse);
+            listFile();
+            mergeFLV();
+            System.out.println("\n" + "Done!!!");
+            return;
+        }
+
         HelpFormatter help = new HelpFormatter();
         help.setOptionComparator(null);
         help.printHelp(100, "GetBilibili.jar", "", options, "", true);
@@ -151,48 +151,22 @@ public class GetBilibili {
     }
 
     private static void getCID(String url) throws IOException {
-        if (url.contains("bangumi")) {
-            if (url.contains("movie")) {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
-                for (String s; (s = bufferedReader.readLine()) != null; ) {
-                    if (s.contains("formalAid")) {
-                        int i = s.indexOf('"') + 1;
-                        int j = s.indexOf('"', i);
-                        url = new StringBuilder("http://www.bilibili.com/video/av/").insert(32, s.substring(i, j)).toString();
-                        break;
-                    }
-                }
-                bufferedReader.close();
-            }
-            if (url.contains("anime")) {
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
-                for (String s; (s = bufferedReader.readLine()) != null; ) {
-                    if (s.contains("v-av-link")) {
-                        int i = s.indexOf('"') + 1;
-                        int j = s.indexOf('"', i);
-                        url = s.substring(i, j);
-                        break;
-                    }
-                }
-                bufferedReader.close();
-            }
-        }
-
         URLConnection connection = new URL(url).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
+
         BufferedReader bufferedReader;
         try {
             bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(connection.getInputStream()), "utf-8"));
         } catch (ZipException e) {
             bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
         }
+
         int x = 0, y = 0;
-        boolean isBangumi = false;
         for (String s; (s = bufferedReader.readLine()) != null; ) {
-            if (s.contains("<!-- aid，价格， 没有背景图的时候：0 其它：1-->")) {
-                isBangumi = true;
+            if (s.contains("<div class=\"msgbox\"><div class=\"content\"><a id='login-btn'>登录</a></div></div>")) {
+                throw new IllegalArgumentException("此为隐藏视频，需要设置 Cookie。");
             }
-            if (!isBangumi) {
+            if (url.contains("video")) {
                 if (s.contains("cid=")) {
                     x = 1;
                     Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
@@ -205,7 +179,7 @@ public class GetBilibili {
                 if (x == 1 && y == 1) {
                     break;
                 }
-            } else {
+            } else if (url.contains("movie")) {
                 if (s.contains("cid=")) {
                     x = 1;
                     Video_Cid = s.substring(s.indexOf("cid=") + 5, s.indexOf("cid=") + 13);
@@ -213,6 +187,29 @@ public class GetBilibili {
                 if (s.contains("pay_top_msg")) {
                     y = 1;
                     int i = s.lastIndexOf("</div>");
+                    Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i);
+                }
+                if (x == 1 && y == 1) {
+                    break;
+                }
+            } else if (url.contains("anime")) {
+                if (s.contains("v-av-link")) {
+                    x = 1;
+                    int i = s.lastIndexOf("</a>");
+                    String aid = s.substring(s.lastIndexOf('>', i) + 3, i);
+                    BufferedReader bufferedReader2 = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8"));
+                    for (String s2; (s2 = bufferedReader2.readLine()) != null; ) {
+                        if (s2.contains("cid")) {
+                            int i2 = s2.indexOf("cid\":");
+                            Video_Cid = s2.substring(i2 + 5, i2 + 12);
+                            break;
+                        }
+                    }
+                    bufferedReader2.close();
+                }
+                if (s.contains("<h1 title=")) {
+                    y = 1;
+                    int i = s.lastIndexOf("</h1>");
                     Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i);
                 }
                 if (x == 1 && y == 1) {
@@ -256,7 +253,7 @@ public class GetBilibili {
         if (!new File(TempDir, "aria2c.exe").exists()) {
             getEXE(Aria2Link);
         }
-        execute(true, TempDir.getAbsolutePath() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.getAbsolutePath(), "--disk-cache=32M", "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
+        execute(true, TempDir.getAbsolutePath() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.getAbsolutePath(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
     }
 
     private static void listFile() throws IOException {
