@@ -43,8 +43,8 @@ public class GetBilibili {
     private static long Video_Size;
     private static int Video_Length;
     private static List<String> Link;
-    private static boolean Delete = true;
-    private static boolean Convert = false;
+    private static boolean isDelete = true;
+    private static boolean isConvert = false;
     private static Set<Process> Tasks = new HashSet<>();
 
     static {
@@ -74,8 +74,8 @@ public class GetBilibili {
                 break;
             case "-m":
                 if (args.length > 2) {
-                    Delete = args[1].equals("1");
-                    Convert = args[2].equals("1");
+                    isDelete = args[1].equals("1");
+                    isConvert = args[2].equals("1");
                 }
                 createDirectory();
                 listFile();
@@ -89,7 +89,7 @@ public class GetBilibili {
                 createDirectory();
                 getCID(args[1]);
                 if (args.length > 3) {
-                    Convert = args[2].equals("1");
+                    isConvert = args[2].equals("1");
                     if (!args[3].equals("0")) {
                         Dir.delete();
                         Dir = new File(args[3], "GetBilibili");
@@ -106,7 +106,7 @@ public class GetBilibili {
                 break;
             case "-j":
                 createDirectory();
-                Link = Json(args[1]);
+                Link = parseJSON(args[1]);
                 saveLink();
                 downLoad();
                 listFile();
@@ -114,7 +114,7 @@ public class GetBilibili {
                 break;
             case "-x":
                 createDirectory();
-                Link = XML(args[1]);
+                Link = parseXML(args[1]);
                 saveLink();
                 downLoad();
                 listFile();
@@ -215,8 +215,8 @@ public class GetBilibili {
 
     private static void getLink() throws IOException, NoSuchAlgorithmException {
         StringBuilder SubLink = new StringBuilder().append("appkey=").append(new String(new BASE64Decoder().decodeBuffer(Appkey), "utf-8")).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
-        String Sign = Hash(SubLink + new String(new BASE64Decoder().decodeBuffer(Secretkey), "utf-8"), "MD5");
-        Link = Json("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
+        String Sign = hash(SubLink + new String(new BASE64Decoder().decodeBuffer(Secretkey), "utf-8"), "MD5");
+        Link = parseJSON("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
     }
 
     private static void saveLink() throws IOException {
@@ -273,7 +273,7 @@ public class GetBilibili {
 
     private static void mergeFLV() throws IOException, InterruptedException {
         File tempFLV = new File(Dir.getParent(), "123.flv");
-        String finalFilePath = Dir.getParent() + "\\" + getFileName() + (Convert ? ".mp4" : ".flv");
+        String finalFilePath = Dir.getParent() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
 
         System.out.println("\n" + "Merging...");
         if (!new File(TempDir, "ffmpeg.exe").exists()) {
@@ -281,7 +281,7 @@ public class GetBilibili {
         }
         execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", tempFLV.getAbsolutePath());
 
-        if (Convert) {
+        if (isConvert) {
             System.out.println("\n" + "Converting...");
             execute(true, TempDir.getAbsolutePath() + "/ffmpeg.exe", "-i", tempFLV.getAbsolutePath(), "-c", "copy", finalFilePath);
         } else {
@@ -296,7 +296,7 @@ public class GetBilibili {
             tempFLV.deleteOnExit();
         }
 
-        if (Delete) {
+        if (isDelete) {
             File[] files = Dir.listFiles();
             if (files != null) {
                 for (File flv : files) {
@@ -365,7 +365,7 @@ public class GetBilibili {
         bufferedReader.close();
     }
 
-    private static String Hash(String str, String algorithm) throws NoSuchAlgorithmException {
+    private static String hash(String str, String algorithm) throws NoSuchAlgorithmException {
         MessageDigest instance = MessageDigest.getInstance(algorithm);
         byte[] digest = instance.digest(str.getBytes());
 
@@ -377,7 +377,7 @@ public class GetBilibili {
         return stringBuilder.toString();
     }
 
-    private static List<String> Json(String link) throws IOException {
+    private static List<String> parseJSON(String link) throws IOException {
         List<String> Link = new ArrayList<>();
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
@@ -395,7 +395,7 @@ public class GetBilibili {
         return Link;
     }
 
-    private static List<String> XML(String link) throws IOException, ParserConfigurationException, SAXException {
+    private static List<String> parseXML(String link) throws IOException, ParserConfigurationException, SAXException {
         URLConnection connection = new URL(link).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
 
