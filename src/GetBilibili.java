@@ -36,11 +36,11 @@ public class GetBilibili {
     private static final String SevenZipLink = "http://blog.xhstormr.tk/uploads/bin/7zr.exe";
     private static final String Appkey = "NmY5MGE1OWFjNThhNDEyMw==";
     private static final String Secretkey = "MGJmZDg0Y2MzOTQwMDM1MTczZjM1ZTY3Nzc1MDgzMjY=";
-    private static final String Cookie = "";//DedeUserID=1426743; DedeUserID__ckMd5=477ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
     private static File Dir;
     private static File TempDir;
     private static String Video_Cid;
     private static String Video_Title;
+    private static String Cookie;//DedeUserID=1426753; DedeUserID__ckMd5=427ebfe30d4f15eb; SESSDATA=f204dbc8%2C1E98438047%2Cfe76287b; sid=9y6y864j
     private static long Video_Size;
     private static int Video_Length;
     private static List<String> Link;
@@ -62,20 +62,20 @@ public class GetBilibili {
         options.addOption("delete", false, "(Default: false) Delete segmented video after completion");
         options.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion");
         options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory");
+        options.addOption("cookie", true, "(Default: null) Specify the cookie");
 
         CommandLine parse;
         try {
             parse = new DefaultParser().parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage() + "\n");
-            HelpFormatter help = new HelpFormatter();
-            help.setOptionComparator(null);
-            help.printHelp(100, "GetBilibili.jar", "", options, "", true);
+            printHelp(options);
             return;
         }
 
         isDelete = parse.hasOption("delete");
         isConvert = parse.hasOption("convert");
+        Cookie = parse.getOptionValue("cookie") != null ? parse.getOptionValue("cookie") : "";
 
         if (parse.getOptionValue('l') != null) {
             generateLink(parse.getOptionValue('l'));
@@ -101,14 +101,16 @@ public class GetBilibili {
             return;
         }
         if (parse.hasOption('h')) {
-            HelpFormatter help = new HelpFormatter();
-            help.setOptionComparator(null);
-            help.printHelp(100, "GetBilibili.jar", "", options, "", true);
+            printHelp(options);
             return;
         }
+        printHelp(options);
+    }
+
+    private static void printHelp(Options options) {
         HelpFormatter help = new HelpFormatter();
         help.setOptionComparator(null);
-        help.printHelp(100, "GetBilibili.jar", "", options, "", true);
+        help.printHelp(150, "GetBilibili.jar", "", options, "", true);
     }
 
     private static void generateLink(String url) throws IOException, ParserConfigurationException, SAXException, NoSuchAlgorithmException {

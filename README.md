@@ -38,6 +38,8 @@ GetBilibili.jar -m
   * (Default: false) Convert FLV to MP4 after completion
 * -dir \<arg\>
   * (Default: Jar Dir) Specify the download/merge directory
+* -cookie \<arg\>
+  * (Default: null) Specify the cookie
 
 ## Note
 现在的这个 Key 因使用次数过多而被限速了（影响 `-d` 的原视频链接选项，10 KB/S），也不知道多久能恢复。
