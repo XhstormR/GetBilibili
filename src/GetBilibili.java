@@ -24,10 +24,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -268,10 +265,9 @@ public class GetBilibili {
             }).toArray(Path[]::new);
         }
 
+        String s = "file 'X'";
         try (PrintWriter printWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(fileList), "utf-8")))) {
-            for (Path path : paths) {
-                printWriter.println(new StringBuilder("file ''").insert(6, path.toString()).toString());
-            }
+            Arrays.stream(paths).forEach(o -> printWriter.println(s.replace("X", o.toString())));
         }
     }
 
