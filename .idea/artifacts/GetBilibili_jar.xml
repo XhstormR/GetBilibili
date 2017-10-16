@@ -4,6 +4,7 @@
     <root id="archive" name="GetBilibili.jar">
       <element id="module-output" name="GetBilibili" />
       <element id="extracted-dir" path="$PROJECT_DIR$/libs/gson-2.7.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/libs/commons-cli-1.3.1.jar" path-in-jar="/" />
     </root>
   </artifact>
 </component>

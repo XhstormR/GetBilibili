@@ -2,6 +2,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.apache.commons.cli.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -25,6 +26,7 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
+import static java.lang.Character.UnicodeBlock.KATAKANA;
 import static java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT;
 
 public class GetBilibili {
@@ -43,7 +45,7 @@ public class GetBilibili {
     private static long Video_Size;
     private static int Video_Length;
     private static List<String> Link;
-    private static boolean isDelete = true;
+    private static boolean isDelete = false;
     private static boolean isConvert = false;
     private static Set<Process> Tasks = new HashSet<>();
 
@@ -53,81 +55,82 @@ public class GetBilibili {
 
     public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException, ParserConfigurationException, SAXException {
         System.out.println();
-        if (args.length < 1) {
-            System.out.println("Error!!!");
+        Options options = new Options();
+        options.addOption("l", true, "Get bilibili ultra-definition video link");
+        options.addOption("d", true, "Download bilibili ultra-definition video");
+        options.addOption("j", true, "Download bilibili ultra-definition video via json");
+        options.addOption("x", true, "Download bilibili ultra-definition video via xml");
+        options.addOption("m", false, "Merge segmented video");
+        options.addOption("del", false, "(Default: false) Delete segmented video after completion");
+        options.addOption("con", false, "(Default: false) Convert FLV to MP4 after completion");
+        options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory");
+
+        CommandLine parse;
+        try {
+            parse = new DefaultParser().parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage() + "\n");
+            HelpFormatter help = new HelpFormatter();
+            help.setOptionComparator(null);
+            help.printHelp(100, "GetBilibili.jar", "", options, "", true);
             return;
-        } else switch (args[0]) {
-            case "-l":
-                if (args.length < 2) {
-                    System.out.println("Error!!!");
-                    return;
-                }
-                getCID(args[1]);
-                getLink();
-                DecimalFormat sizeFormat = new DecimalFormat("0.00");
-                DecimalFormat numFormat = new DecimalFormat("0,000");
-                DecimalFormat timeFormat = new DecimalFormat("00");
-                int s = Video_Length / 1000;
-                System.out.println("Title: " + Video_Title);
-                System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB (" + numFormat.format(Video_Size) + " bytes)\t" + "Total Time: " + timeFormat.format(s / 60) + ":" + timeFormat.format(s % 60) + " Mins\n");
-                Link.forEach(System.out::println);
-                break;
-            case "-m":
-                if (args.length > 2) {
-                    isDelete = args[1].equals("1");
-                    isConvert = args[2].equals("1");
-                }
-                createDirectory();
-                listFile();
-                mergeFLV();
-                break;
-            case "-d":
-                if (args.length < 2) {
-                    System.out.println("Error!!!");
-                    return;
-                }
-                createDirectory();
-                getCID(args[1]);
-                if (args.length > 3) {
-                    isConvert = args[2].equals("1");
-                    if (!args[3].equals("0")) {
-                        Dir.delete();
-                        Dir = new File(args[3], "GetBilibili");
-                        if (!Dir.exists()) {
-                            Dir.mkdirs();
-                        }
-                    }
-                }
-                getLink();
-                saveLink();
-                downLoad();
-                listFile();
-                mergeFLV();
-                break;
-            case "-j":
-                createDirectory();
-                Link = parseJSON(args[1]);
-                saveLink();
-                downLoad();
-                listFile();
-                mergeFLV();
-                break;
-            case "-x":
-                createDirectory();
-                Link = parseXML(args[1]);
-                saveLink();
-                downLoad();
-                listFile();
-                mergeFLV();
-                break;
-            default:
-                System.out.println("Error!!!");
-                return;
         }
-        System.out.println("\n" + "Done!!!");
+
+        isDelete = parse.hasOption("del");
+        isConvert = parse.hasOption("con");
+
+        if (parse.getOptionValue('l') != null) {
+            getCID(parse.getOptionValue('l'));
+            getLink();
+            showLink();
+            System.out.println("\n" + "Done!!!");
+            return;
+        }
+
+        if (parse.hasOption('m')) {
+            createDirectory(parse);
+            listFile();
+            mergeFLV();
+            System.out.println("\n" + "Done!!!");
+            return;
+        }
+        if (parse.getOptionValue('d') != null) {
+            createDirectory(parse);
+            getCID(parse.getOptionValue('d'));
+            getLink();
+            saveLink();
+            downLoad();
+            listFile();
+            mergeFLV();
+            System.out.println("\n" + "Done!!!");
+            return;
+        }
+        if (parse.getOptionValue('j') != null) {
+            Link = parseJSON(parse.getOptionValue('j'));
+            createDirectory(parse);
+            saveLink();
+            downLoad();
+            listFile();
+            mergeFLV();
+            System.out.println("\n" + "Done!!!");
+            return;
+        }
+        if (parse.getOptionValue('x') != null) {
+            Link = parseXML(parse.getOptionValue('x'));
+            createDirectory(parse);
+            saveLink();
+            downLoad();
+            listFile();
+            mergeFLV();
+            System.out.println("\n" + "Done!!!");
+            return;
+        }
+        HelpFormatter help = new HelpFormatter();
+        help.setOptionComparator(null);
+        help.printHelp(100, "GetBilibili.jar", "", options, "", true);
     }
 
-    private static void createDirectory() throws UnsupportedEncodingException {
+    private static void createDirectory(CommandLine parse) throws UnsupportedEncodingException {
         String path = URLDecoder.decode(GetBilibili.class.getProtectionDomain().getCodeSource().getLocation().getPath(), "utf-8");
         Dir = new File(path.substring(0, path.lastIndexOf('/')), "GetBilibili");
         if (!Dir.exists()) {
@@ -137,6 +140,13 @@ public class GetBilibili {
         TempDir = new File(tempPath, "GetBilibili");
         if (!TempDir.exists()) {
             TempDir.mkdirs();
+        }
+        if (parse.getOptionValue("dir") != null) {
+            Dir.delete();
+            Dir = new File(parse.getOptionValue("dir"), "GetBilibili");
+            if (!Dir.exists()) {
+                Dir.mkdirs();
+            }
         }
     }
 
@@ -217,6 +227,16 @@ public class GetBilibili {
         StringBuilder SubLink = new StringBuilder().append("appkey=").append(new String(new BASE64Decoder().decodeBuffer(Appkey), "utf-8")).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv");
         String Sign = hash(SubLink + new String(new BASE64Decoder().decodeBuffer(Secretkey), "utf-8"), "MD5");
         Link = parseJSON("http://interface.bilibili.com/playurl?" + SubLink + "&sign=" + Sign);
+    }
+
+    private static void showLink() {
+        DecimalFormat sizeFormat = new DecimalFormat("0.00");
+        DecimalFormat numFormat = new DecimalFormat("0,000");
+        DecimalFormat timeFormat = new DecimalFormat("00");
+        int s = Video_Length / 1000;
+        System.out.println("Title: " + Video_Title);
+        System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB (" + numFormat.format(Video_Size) + " bytes)\t" + "Total Time: " + timeFormat.format(s / 60) + ":" + timeFormat.format(s % 60) + " Mins\n");
+        Link.forEach(System.out::println);
     }
 
     private static void saveLink() throws IOException {
@@ -314,7 +334,7 @@ public class GetBilibili {
         StringBuilder stringBuilder = new StringBuilder();
         for (char c : Video_Title.toCharArray()) {
             Character.UnicodeBlock unicodeBlock = Character.UnicodeBlock.of(c);
-            stringBuilder.append(unicodeBlock.equals(LATIN_1_SUPPLEMENT) ? "" : c);
+            stringBuilder.append(unicodeBlock.equals(LATIN_1_SUPPLEMENT) || unicodeBlock.equals(KATAKANA) ? "" : c);
         }
         String s = stringBuilder.toString();
         return s.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('‧', ' ').replace('•', ' ');
