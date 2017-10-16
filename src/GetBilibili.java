@@ -123,7 +123,11 @@ public class GetBilibili {
 //        bufferedReader.close();
 
         /*原生解析页面获得 Video_Cid 和 Video_Title*/
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(new URL(url).openStream()), "utf-8"));
+        String cookie = "DedeUserID=1824443; SESSDATA=f201dba8%2C1475662871%2C2a00cb50";
+        URLConnection connection = new URL(url).openConnection();
+        connection.setRequestProperty("Cookie", cookie);
+
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(connection.getInputStream()), "utf-8"));
         int x = 0, y = 0;
         for (String s; (s = bufferedReader.readLine()) != null; ) {
             if (s.contains("cid=")) {
@@ -275,7 +279,7 @@ public class GetBilibili {
     private static File getFile(String link) throws IOException {
         URL url = new URL(link);
         URLConnection connection = url.openConnection();
-        connection.addRequestProperty("User-Agent", UserAgent);
+        connection.setRequestProperty("User-Agent", UserAgent);
         String path = url.getFile();
         File file = new File(TempDir, path.substring(path.lastIndexOf('/') + 1));
 
