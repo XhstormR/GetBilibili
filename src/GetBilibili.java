@@ -61,14 +61,20 @@ public class GetBilibili {
                 Link.forEach(System.out::println);
                 break;
             case "-m":
-                Delete = args[1].equals("1");
-                Convert = args[2].equals("1");
+                if (args[1] != null) {
+                    Delete = args[1].equals("1");
+                }
+                if (args[2] != null) {
+                    Convert = args[2].equals("1");
+                }
                 listFile();
                 mergeFLV();
                 break;
             case "-d":
                 getCID(args[1]);
-                Convert = args[2].equals("1");
+                if (args[2] != null) {
+                    Convert = args[2].equals("1");
+                }
                 getLink();
                 saveLink();
                 downLoad();
