@@ -219,7 +219,7 @@ public class GetBilibili {
         File[] files = Dir.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith(".flv");
+                return name.endsWith(".flv") || name.endsWith(".mp4");
             }
         });
 
@@ -231,7 +231,11 @@ public class GetBilibili {
                     String name2 = o2.getName();
                     String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
                     String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
-                    return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
+                    if (s1.getBytes().length == s1.length()) {
+                        return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
+                    } else {//包含汉字
+                        return s1.compareTo(s2);
+                    }
                 }
             });
             for (File file : files) {
