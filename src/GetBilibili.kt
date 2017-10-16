@@ -2,7 +2,6 @@ import com.google.gson.JsonParser
 import org.apache.commons.cli.*
 import org.w3c.dom.Element
 import org.xml.sax.InputSource
-import org.xml.sax.SAXException
 import java.io.*
 import java.lang.Character.UnicodeBlock.KATAKANA
 import java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT
@@ -15,14 +14,12 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
 import java.text.DecimalFormat
 import java.util.*
 import java.util.regex.Pattern
 import java.util.zip.GZIPInputStream
 import java.util.zip.ZipException
 import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.parsers.ParserConfigurationException
 
 object GetBilibili {
     private val UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.89 Safari/537.36"
@@ -48,7 +45,6 @@ object GetBilibili {
         Runtime.getRuntime().addShutdownHook(Thread { Tasks.forEach { it.destroyForcibly() } })
     }
 
-    @Throws(IOException::class, InterruptedException::class, NoSuchAlgorithmException::class, ParserConfigurationException::class, SAXException::class)
     @JvmStatic fun main(args: Array<String>) {
         println()
         val options = Options()
@@ -61,9 +57,8 @@ object GetBilibili {
         options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory")
         options.addOption("cookie", true, "(Default: null) Specify the cookie")
 
-        val parse: CommandLine
-        try {
-            parse = DefaultParser().parse(options, args)
+        val parse = try {
+            DefaultParser().parse(options, args)
         } catch (e: ParseException) {
             println(e.message + "\n")
             printHelp(options)
@@ -110,7 +105,6 @@ object GetBilibili {
         help.printHelp(150, "GetBilibili.jar", "", options, "", true)
     }
 
-    @Throws(IOException::class, ParserConfigurationException::class, SAXException::class, NoSuchAlgorithmException::class)
     private fun generateLink(url: String) {
         if (url.contains("playurl") && url.contains("json")) {
             Link = parseJSON(url)
@@ -122,7 +116,6 @@ object GetBilibili {
         }
     }
 
-    @Throws(IOException::class)
     private fun createDirectory(parse: CommandLine) {
         val tempPath = System.getenv("APPDATA")
         TempDir = Paths.get(tempPath, "GetBilibili")
@@ -140,73 +133,67 @@ object GetBilibili {
         }
     }
 
-    @Throws(IOException::class)
     private fun getCID(url: String) {
         val connection = URL(url).openConnection()
         connection.setRequestProperty("Cookie", Cookie)
 
-        var bufferedReader: BufferedReader
-        try {
-            bufferedReader = BufferedReader(InputStreamReader(GZIPInputStream(connection.inputStream), "utf-8"))
+        val bufferedReader = try {
+            BufferedReader(InputStreamReader(GZIPInputStream(connection.inputStream), "utf-8"))
         } catch (e: ZipException) {
-            bufferedReader = BufferedReader(InputStreamReader(connection.inputStream, "utf-8"))
+            BufferedReader(InputStreamReader(connection.inputStream, "utf-8"))
         }
 
         var x = 0
         var y = 0
         bufferedReader.useLines {
-            it.forEach { s ->
-                if (s.contains("<div class=\"msgbox\"><div class=\"content\"><a id='login-btn'>登录</a></div></div>")) {
+            it.forEach {
+                if (it.contains("<div class=\"msgbox\"><div class=\"content\"><a id='login-btn'>登录</a></div></div>")) {
                     throw IllegalArgumentException("此为隐藏视频，需要设置 Cookie。")
                 }
-                if (url.contains("video")) {
-                    if (s.contains("cid=")) {
-                        x = 1
-                        Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'))
-                    }
-                    if (s.contains("<h1 title=")) {
-                        y = 1
-                        val i = s.lastIndexOf("</h1>")
-                        Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i)
-                    }
-                    if (x == 1 && y == 1) {
-//                        break
-                    }
-                } else if (url.contains("movie")) {
-                    if (s.contains("cid=")) {
-                        x = 1
-                        Video_Cid = s.substring(s.indexOf("cid=") + 5, s.indexOf("cid=") + 13)
-                    }
-                    if (s.contains("pay_top_msg")) {
-                        y = 1
-                        val i = s.lastIndexOf("</div>")
-                        Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i)
-                    }
-                    if (x == 1 && y == 1) {
-//                        break
-                    }
-                } else if (url.contains("anime")) {
-                    if (s.contains("v-av-link")) {
-                        x = 1
-                        val i = s.lastIndexOf("</a>")
-                        val aid = s.substring(s.lastIndexOf('>', i) + 3, i)
-                        BufferedReader(InputStreamReader(GZIPInputStream(URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8")).use { bufferedReader2 -> Video_Cid = JsonParser().parse(bufferedReader2).asJsonArray.get(0).asJsonObject.get("cid").asString }
-                    }
-                    if (s.contains("<h1 title=")) {
-                        y = 1
-                        val i = s.lastIndexOf("</h1>")
-                        Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i)
-                    }
-                    if (x == 1 && y == 1) {
-//                        break
+                if (x != 1 && y != 1) {
+                    when {
+                        url.contains("video") -> {
+                            if (it.contains("cid=")) {
+                                x = 1
+                                Video_Cid = it.substring(it.indexOf("cid=") + 4, it.indexOf('&'))
+                            }
+                            if (it.contains("<h1 title=")) {
+                                y = 1
+                                val i = it.lastIndexOf("</h1>")
+                                Video_Title = it.substring(it.lastIndexOf('>', i) + 1, i)
+                            }
+                        }
+                        url.contains("movie") -> {
+                            if (it.contains("cid=")) {
+                                x = 1
+                                Video_Cid = it.substring(it.indexOf("cid=") + 5, it.indexOf("cid=") + 13)
+                            }
+                            if (it.contains("pay_top_msg")) {
+                                y = 1
+                                val i = it.lastIndexOf("</div>")
+                                Video_Title = it.substring(it.lastIndexOf('>', i) + 1, i)
+                            }
+                        }
+                        url.contains("anime") -> {
+                            if (it.contains("v-av-link")) {
+                                x = 1
+                                val i = it.lastIndexOf("</a>")
+                                val aid = it.substring(it.lastIndexOf('>', i) + 3, i)
+                                BufferedReader(InputStreamReader(GZIPInputStream(URL("http://www.bilibili.com/widget/getPageList?aid=" + aid).openStream()), "utf-8")).use { bufferedReader2 -> Video_Cid = JsonParser().parse(bufferedReader2).asJsonArray.get(0).asJsonObject.get("cid").asString }
+                            }
+                            if (it.contains("<h1 title=")) {
+                                y = 1
+                                val i = it.lastIndexOf("</h1>")
+                                Video_Title = it.substring(it.lastIndexOf('>', i) + 1, i)
+                            }
+                        }
+                        else -> throw IllegalStateException("此链接需要更新，请告知开发者！")
                     }
                 }
             }
         }
-        bufferedReader.close()
     }
 
-    @Throws(IOException::class, NoSuchAlgorithmException::class)
     private fun getLink() {
         val SubLink = StringBuilder().append("appkey=").append(String(Base64.getDecoder().decode(Appkey))).append("&cid=").append(Video_Cid).append("&otype=json&quality=3&type=flv")
         val Sign = hash(SubLink.toString() + String(Base64.getDecoder().decode(Secretkey)), "MD5")
@@ -225,14 +212,12 @@ object GetBilibili {
         Link!!.forEach(::println)
     }
 
-    @Throws(IOException::class)
     private fun saveLink() {
         val link = TempDir!!.resolve("1.txt")
         link.toFile().deleteOnExit()
         Files.write(link, Link, Charset.forName("utf-8"))
     }
 
-    @Throws(IOException::class, InterruptedException::class)
     private fun downLoad() {
         if (Files.notExists(TempDir!!.resolve("aria2c.exe"))) {
             getEXE(Aria2Link)
@@ -240,7 +225,6 @@ object GetBilibili {
         execute(TempDir!!.resolve("aria2c.exe").toString(), "--input-file=1.txt", "--dir=" + Dir!!.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false")
     }
 
-    @Throws(IOException::class)
     private fun listFile() {
         val fileList = TempDir!!.resolve("2.txt")
         fileList.toFile().deleteOnExit()
@@ -257,7 +241,6 @@ object GetBilibili {
         PrintWriter(BufferedWriter(OutputStreamWriter(Files.newOutputStream(fileList), "utf-8"))).use { paths.forEach { o -> it.println(s.replace("X", o.toString())) } }
     }
 
-    @Throws(IOException::class, InterruptedException::class)
     private fun mergeFLV() {
         val tempFile = Dir!!.resolveSibling("123.flv")
         val finalFile = Dir!!.resolveSibling(fileName + if (isConvert) ".mp4" else ".flv")
@@ -289,7 +272,7 @@ object GetBilibili {
         Files.deleteIfExists(tempFile)
 
         if (isDelete) {
-            Dir!!.toFile().listFiles().forEach(File::deleteOnExit)
+            Dir!!.toFile().listFiles().forEach { Files.deleteIfExists(it.toPath()) }
             Files.deleteIfExists(Dir!!)
         }
     }
@@ -308,7 +291,6 @@ object GetBilibili {
             return s.replace('/', ' ').replace('\\', ' ').replace(':', ' ').replace('*', ' ').replace('?', ' ').replace('"', ' ').replace('<', ' ').replace('>', ' ').replace('|', ' ').replace('‧', ' ').replace('•', ' ')
         }
 
-    @Throws(IOException::class, InterruptedException::class)
     private fun getEXE(link: String) {
         if (Files.notExists(TempDir!!.resolve("7zr.exe"))) {
             getFile(SevenZipLink)
@@ -317,7 +299,6 @@ object GetBilibili {
         execute(TempDir!!.resolve("7zr.exe").toString(), "x", "-y", link.substring(link.lastIndexOf('/') + 1))
     }
 
-    @Throws(IOException::class)
     private fun getFile(link: String) {
         val connection = URL(link).openConnection()
         connection.setRequestProperty("User-Agent", UserAgent)
@@ -327,7 +308,6 @@ object GetBilibili {
         connection.inputStream.use { inputStream -> Files.copy(inputStream, path, REPLACE_EXISTING) }
     }
 
-    @Throws(IOException::class, InterruptedException::class)
     private fun execute(vararg command: String) {
         val process = ProcessBuilder(*command).directory(TempDir!!.toFile()).redirectErrorStream(true).redirectOutput(Redirect.INHERIT).redirectInput(Redirect.INHERIT).start()
         Tasks.add(process)
@@ -335,7 +315,6 @@ object GetBilibili {
         Tasks.remove(process)
     }
 
-    @Throws(NoSuchAlgorithmException::class)
     private fun hash(str: String, algorithm: String): String {
         val instance = MessageDigest.getInstance(algorithm)
         val digest = instance.digest(str.toByteArray())
@@ -348,7 +327,6 @@ object GetBilibili {
         return stringBuilder.toString()
     }
 
-    @Throws(IOException::class)
     private fun parseJSON(link: String): List<String> {
         val Link = ArrayList<String>()
         val connection = URL(link).openConnection()
@@ -367,7 +345,6 @@ object GetBilibili {
         return Link
     }
 
-    @Throws(IOException::class, ParserConfigurationException::class, SAXException::class)
     private fun parseXML(link: String): List<String> {
         val connection = URL(link).openConnection()
         connection.setRequestProperty("Cookie", Cookie)
