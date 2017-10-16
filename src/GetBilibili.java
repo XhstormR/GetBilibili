@@ -60,8 +60,8 @@ public class GetBilibili {
         options.addOption("j", true, "Download bilibili ultra-definition video via json");
         options.addOption("x", true, "Download bilibili ultra-definition video via xml");
         options.addOption("m", false, "Merge segmented video");
-        options.addOption("del", false, "(Default: false) Delete segmented video after completion");
-        options.addOption("con", false, "(Default: false) Convert FLV to MP4 after completion");
+        options.addOption("delete", false, "(Default: false) Delete segmented video after completion");
+        options.addOption("convert", false, "(Default: false) Convert FLV to MP4 after completion");
         options.addOption("dir", true, "(Default: Jar Dir) Specify the download/merge directory");
 
         CommandLine parse;
@@ -71,18 +71,27 @@ public class GetBilibili {
             System.out.println(e.getMessage() + "\n");
             HelpFormatter help = new HelpFormatter();
             help.setOptionComparator(null);
-            help.printHelp(100, "GetBilibili.jar", "", options, "", true);
+            help.printHelp(120, "GetBilibili.jar", "", options, "", true);
             return;
         }
 
-        isDelete = parse.hasOption("del");
-        isConvert = parse.hasOption("con");
+        isDelete = parse.hasOption("delete");
+        isConvert = parse.hasOption("convert");
 
         if (parse.getOptionValue('l') != null) {
-            getCID(parse.getOptionValue('l'));
-            getLink();
-            showLink();
-            System.out.println("\n" + "Done!!!");
+            String url = parse.getOptionValue('l');
+            if (url.contains("playurl") && url.contains("json")) {
+                Link = parseJSON(url);
+                showLink();
+            } else if (url.contains("playurl")) {
+                Link = parseXML(url);
+                showLink();
+            } else {
+                getCID(url);
+                getLink();
+                showLink();
+            }
+            System.out.println("\n" + "Done!");
             return;
         }
         if (parse.getOptionValue('d') != null) {
@@ -93,7 +102,7 @@ public class GetBilibili {
             downLoad();
             listFile();
             mergeFLV();
-            System.out.println("\n" + "Done!!!");
+            System.out.println("\n" + "Done!");
             return;
         }
         if (parse.getOptionValue('j') != null) {
@@ -103,7 +112,7 @@ public class GetBilibili {
             downLoad();
             listFile();
             mergeFLV();
-            System.out.println("\n" + "Done!!!");
+            System.out.println("\n" + "Done!");
             return;
         }
         if (parse.getOptionValue('x') != null) {
@@ -113,19 +122,19 @@ public class GetBilibili {
             downLoad();
             listFile();
             mergeFLV();
-            System.out.println("\n" + "Done!!!");
+            System.out.println("\n" + "Done!");
             return;
         }
         if (parse.hasOption('m')) {
             createDirectory(parse);
             listFile();
             mergeFLV();
-            System.out.println("\n" + "Done!!!");
+            System.out.println("\n" + "Done!");
             return;
         }
         HelpFormatter help = new HelpFormatter();
         help.setOptionComparator(null);
-        help.printHelp(100, "GetBilibili.jar", "", options, "", true);
+        help.printHelp(120, "GetBilibili.jar", "", options, "", true);
     }
 
     private static void createDirectory(CommandLine parse) throws UnsupportedEncodingException {
@@ -229,7 +238,7 @@ public class GetBilibili {
         DecimalFormat numFormat = new DecimalFormat("0,000");
         DecimalFormat timeFormat = new DecimalFormat("00");
         int s = Video_Length / 1000;
-        System.out.println("Title: " + Video_Title);
+        System.out.println("Title: " + getFileName() + (isConvert ? ".mp4" : ".flv"));
         System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB (" + numFormat.format(Video_Size) + " bytes)\t" + "Total Time: " + timeFormat.format(s / 60) + ":" + timeFormat.format(s % 60) + " Mins\n");
         Link.forEach(System.out::println);
     }
