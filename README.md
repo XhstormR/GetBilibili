@@ -24,3 +24,8 @@ GetBilibili.jar -m 0     #合并后保留源文件
 
 ## Reference
 https://www.v2ex.com/t/307373
+
+## TODO
+- [ ] 显示文件大小
+- [ ] 文件名为视频标题
+- [ ] 自定义文件下载目录
