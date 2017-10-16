@@ -4,15 +4,15 @@
 ## Link
 Get Bilibili Ultra-Definition Video Link
 ```bash
-GetBilibili.jar -l http://www.bilibili.com/video/av1585238
+GetBilibili.jar -l http://www.bilibili.com/video/av6896579/
 ```
 
 ## Download
 Download Bilibili Ultra-Definition Video
 ```bash
-GetBilibili.jar -d http://www.bilibili.com/video/av1585238 1 D:/TEST     下载且合并完成后，转为 MP4 格式，下载目录指定为 D:/TEST
-GetBilibili.jar -d http://www.bilibili.com/video/av1585238 0 0     下载且合并完成后，保留为原格式，下载目录为原 JAR 包位置
-GetBilibili.jar -d http://www.bilibili.com/video/av1585238     下载且合并完成后，保留为原格式，下载目录为原 JAR 包位置（默认）
+GetBilibili.jar -d http://www.bilibili.com/video/av6896579/ 1 D:/TEST     下载且合并完成后，转为 MP4 格式，下载目录指定为 D:/TEST
+GetBilibili.jar -d http://www.bilibili.com/video/av6896579/ 0 0     下载且合并完成后，保留为原格式，下载目录为原 JAR 包位置
+GetBilibili.jar -d http://www.bilibili.com/video/av6896579/     下载且合并完成后，保留为原格式，下载目录为原 JAR 包位置（默认）
 ```
 
 ### JSON
@@ -42,7 +42,7 @@ GetBilibili.jar -m     合并后删除源文件，保留为原格式（默认）
 ```
 
 ## Note
-现在的这个 Key 因使用次数过多而被限速了，也不知道多久能恢复。
+现在的这个 Key 因使用次数过多而被限速了（影响 `-d` 选项，80 KB/S），也不知道多久能恢复。
 
 而我也不打算找更多的 Key 了，毕竟这不是可持续性发展。
 

@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipException;
 
 import static java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT;
 
@@ -190,20 +191,44 @@ public class GetBilibili {
 
         URLConnection connection = new URL(url).openConnection();
         connection.setRequestProperty("Cookie", Cookie);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(connection.getInputStream()), "utf-8"));
+        BufferedReader bufferedReader;
+        try {
+            bufferedReader = new BufferedReader(new InputStreamReader(new GZIPInputStream(connection.getInputStream()), "utf-8"));
+        } catch (ZipException e) {
+            bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"));
+        }
         int x = 0, y = 0;
+        boolean isBangumi = false;
         for (String s; (s = bufferedReader.readLine()) != null; ) {
-            if (s.contains("cid=")) {
-                x = 1;
-                Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
+            if (s.contains("<!-- aid，价格， 没有背景图的时候：0 其它：1-->")) {
+                isBangumi = true;
             }
-            if (s.contains("<h1 title=")) {
-                y = 1;
-                int i = s.lastIndexOf("</h1>");
-                Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i);
-            }
-            if (x == 1 && y == 1) {
-                break;
+            if (!isBangumi) {
+                if (s.contains("cid=")) {
+                    x = 1;
+                    Video_Cid = s.substring(s.indexOf("cid=") + 4, s.indexOf('&'));
+                }
+                if (s.contains("<h1 title=")) {
+                    y = 1;
+                    int i = s.lastIndexOf("</h1>");
+                    Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i);
+                }
+                if (x == 1 && y == 1) {
+                    break;
+                }
+            } else {
+                if (s.contains("cid=")) {
+                    x = 1;
+                    Video_Cid = s.substring(s.indexOf("cid=") + 5, s.indexOf("cid=") + 13);
+                }
+                if (s.contains("pay_top_msg")) {
+                    y = 1;
+                    int i = s.lastIndexOf("</div>");
+                    Video_Title = s.substring(s.lastIndexOf('>', i) + 1, i);
+                }
+                if (x == 1 && y == 1) {
+                    break;
+                }
             }
         }
         bufferedReader.close();
