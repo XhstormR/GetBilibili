@@ -89,7 +89,7 @@ public class GetBilibili {
         if (parse.getOptionValue('l') != null) {
             generateLink(parse.getOptionValue('l'));
             showLink();
-            System.out.println("\n" + "Done!");
+            System.out.println("\nDone!");
             return;
         }
         if (parse.getOptionValue('d') != null) {
@@ -99,14 +99,14 @@ public class GetBilibili {
             downLoad();
             listFile();
             mergeFLV();
-            System.out.println("\n" + "Done!");
+            System.out.println("\nDone!");
             return;
         }
         if (parse.hasOption('m')) {
             createDirectory(parse);
             listFile();
             mergeFLV();
-            System.out.println("\n" + "Done!");
+            System.out.println("\nDone!");
             return;
         }
         if (parse.hasOption('h')) {
@@ -224,9 +224,11 @@ public class GetBilibili {
         DecimalFormat sizeFormat = new DecimalFormat("0.00");
         DecimalFormat numFormat = new DecimalFormat("0,000");
         DecimalFormat timeFormat = new DecimalFormat("00");
-        int s = Video_Length / 1000;
-        System.out.println("Title: " + getFileName() + (isConvert ? ".mp4" : ".flv"));
-        System.out.println("Total Size: " + sizeFormat.format(Video_Size / (1024 * 1024.0)) + " MB (" + numFormat.format(Video_Size) + " bytes)\t" + "Total Time: " + timeFormat.format(s / 60) + ":" + timeFormat.format(s % 60) + " Mins\n");
+        int s = Video_Length / 1000;//秒
+        int m = s / 60;//分
+        int h = m / 60;//时
+        System.out.printf("Title: %s\n", getFileName() + (isConvert ? ".mp4" : ".flv"));
+        System.out.printf("Total Size: %s MB (%s bytes)\tTotal Time: %s:%s:%s (%s:%s Mins)\n\n", sizeFormat.format(Video_Size / (1024 * 1024.0)), numFormat.format(Video_Size), timeFormat.format(h), timeFormat.format(m % 60), timeFormat.format(s % 60), timeFormat.format(m), timeFormat.format(s % 60));
         Link.forEach(System.out::println);
     }
 
@@ -240,7 +242,7 @@ public class GetBilibili {
         if (Files.notExists(TempDir.resolve("aria2c.exe"))) {
             getEXE(Aria2Link);
         }
-        execute(TempDir.toString() + "/aria2c.exe", "--input-file=1.txt", "--dir=" + Dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
+        execute(TempDir.resolve("aria2c.exe").toString(), "--input-file=1.txt", "--dir=" + Dir.toString(), "--disk-cache=32M", "--user-agent=" + UserAgent, "--enable-mmap=true", "--max-mmap-limit=2048M", "--continue=true", "--max-concurrent-downloads=1", "--max-connection-per-server=10", "--min-split-size=10M", "--split=10", "--disable-ipv6=true", "--http-no-cache=true", "--check-certificate=false");
     }
 
     private static void listFile() throws IOException {
@@ -271,8 +273,8 @@ public class GetBilibili {
     }
 
     private static void mergeFLV() throws IOException, InterruptedException {
-        Path tempFLV = Dir.getParent().resolve("123.flv");
-        String finalFilePath = Dir.getParent().toString() + "\\" + getFileName() + (isConvert ? ".mp4" : ".flv");
+        Path tempFile = Dir.getParent().resolve("123.flv");
+        Path finalFile = Dir.getParent().resolve(getFileName() + (isConvert ? ".mp4" : ".flv"));
 
         if (Link != null && Link.size() == 1) {
             String s = Link.get(0);
@@ -280,25 +282,25 @@ public class GetBilibili {
             String name = s.substring(s.lastIndexOf('/', i) + 1, i);
             Files.move(Dir.resolve(name), Dir.getParent().resolve(getFileName() + name.substring(name.lastIndexOf('.'))), REPLACE_EXISTING);//移动文件至上层目录
         } else {
-            System.out.println("\n" + "Merging...");
+            System.out.println("\nMerging...");
             if (Files.notExists(TempDir.resolve("ffmpeg.exe"))) {
                 getEXE(FFmpegLink);
             }
-            execute(TempDir.toString() + "/ffmpeg.exe", "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", "-y", tempFLV.toString());
+            execute(TempDir.resolve("ffmpeg.exe").toString(), "-f", "concat", "-safe", "-1", "-i", "2.txt", "-c", "copy", "-y", tempFile.toString());
 
             if (isConvert) {
-                System.out.println("\n" + "Converting...");
-                execute(TempDir.toString() + "/ffmpeg.exe", "-i", tempFLV.toString(), "-c", "copy", "-y", finalFilePath);
+                System.out.println("\nConverting...");
+                execute(TempDir.resolve("ffmpeg.exe").toString(), "-i", tempFile.toString(), "-c", "copy", "-y", finalFile.toString());
             } else {
-                System.out.println("\n" + "Merging...");
+                System.out.println("\nMerging...");
                 if (Files.notExists(TempDir.resolve("yamdi.exe"))) {
                     getEXE(YamdiLink);
                 }
-                execute(TempDir.toString() + "/yamdi.exe", "-i", tempFLV.toString(), "-o", finalFilePath);
+                execute(TempDir.resolve("yamdi.exe").toString(), "-i", tempFile.toString(), "-o", finalFile.toString());
             }
         }
 
-        Files.deleteIfExists(tempFLV);
+        Files.deleteIfExists(tempFile);
 
         if (isDelete) {
             Files.list(Dir).forEach(path -> {
@@ -330,7 +332,7 @@ public class GetBilibili {
             getFile(SevenZipLink);
         }
         getFile(link);
-        execute(TempDir.toString() + "/7zr.exe", "x", "-y", link.substring(link.lastIndexOf('/') + 1));
+        execute(TempDir.resolve("7zr.exe").toString(), "x", "-y", link.substring(link.lastIndexOf('/') + 1));
     }
 
     private static void getFile(String link) throws IOException {
