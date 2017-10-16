@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import static java.lang.Character.UnicodeBlock.LATIN_1_SUPPLEMENT;
@@ -234,11 +236,14 @@ public class GetBilibili {
                     String name2 = o2.getName();
                     String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
                     String s2 = name2.substring(name2.indexOf("-") + 1, name2.indexOf("."));
-                    if (s1.getBytes().length == s1.length()) {
-                        return Integer.valueOf(s1).compareTo(Integer.valueOf(s2));
-                    } else {//包含汉字
-                        return s1.compareTo(s2);
-                    }
+
+                    Pattern pattern = Pattern.compile("\\d+");
+
+                    Matcher matcher1 = pattern.matcher(s1);
+                    Matcher matcher2 = pattern.matcher(s2);
+                    Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
+                    Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
+                    return i1.compareTo(i2);
                 }
             });
             for (File file : files) {
