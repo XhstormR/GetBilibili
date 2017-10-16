@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
 
@@ -250,7 +249,7 @@ public class GetBilibili {
         Path fileList = TempDir.resolve("2.txt");
         fileList.toFile().deleteOnExit();
 
-        List<Path> paths = Files.list(Dir).filter((path) -> path.getFileName().toString().endsWith(".flv") || path.getFileName().toString().endsWith(".mp4")).sorted((path1, path2) -> {
+        Path[] paths = Files.list(Dir).filter((path) -> path.getFileName().toString().endsWith(".flv") || path.getFileName().toString().endsWith(".mp4")).sorted((path1, path2) -> {
             String name1 = path1.getFileName().toString();
             String name2 = path2.getFileName().toString();
             String s1 = name1.substring(name1.indexOf("-") + 1, name1.indexOf("."));
@@ -263,7 +262,7 @@ public class GetBilibili {
             Integer i1 = matcher1.find() ? Integer.valueOf(matcher1.group()) : 0;
             Integer i2 = matcher2.find() ? Integer.valueOf(matcher2.group()) : 0;
             return i1.compareTo(i2);
-        }).collect(Collectors.toList());
+        }).toArray(Path[]::new);
 
         try (PrintWriter printWriter = new PrintWriter(new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(fileList), "utf-8")))) {
             for (Path path : paths) {
