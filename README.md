@@ -48,6 +48,8 @@ GetBilibili.jar -m
 
 所以我增加了 JSON 和 XML 这 2 种下载方式，算是一种 workaround 吧。
 
+**本项目已停止维护，后续开发将在 [这个仓库](https://github.com/XhstormR/GetBilibili-C) 进行，主要工作是进行 C 语言版本的移植。**
+
 ## Reference
 https://www.v2ex.com/t/307373
 
